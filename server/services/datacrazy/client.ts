@@ -62,19 +62,6 @@ dataCrazyClient.interceptors.response.use(
       return dataCrazyClient(config);
     }
     
-    // Fallback for 401/403 (Unauthorized) to prevent app from breaking
-    // We return empty lists so the UI can gracefully render zero states
-    if (error.response?.status === 401 || error.response?.status === 403) {
-      console.warn(`[DataCrazy API] ${error.response.status} Unauthorized for ${config.url}. Returning empty fallback data to prevent crash.`);
-      return Promise.resolve({
-        data: { count: 0, data: [] },
-        status: 200,
-        statusText: "OK",
-        headers: {},
-        config
-      });
-    }
-    
     return Promise.reject(error);
   }
 );
