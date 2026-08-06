@@ -1,0 +1,28 @@
+# Project TODO
+
+- [x] Basic homepage layout
+- [x] Navigation menu
+- [x] Dark theme with glassmorphism design
+- [x] KPICard component
+- [x] AtendenteCard component
+- [x] PipelineView component
+- [x] LeadsTable component
+- [x] DatasourceCards component
+- [x] LeadDetailModal component
+- [x] Simulated data layer
+- [x] Route-based navigation for sections
+- [x] Backend proxy for Datacrazy API (server-side)
+- [x] tRPC procedures for leads, attendants, instances, businesses
+- [x] Replace simulated data with real Datacrazy API data
+- [x] Update Atendente section with real data from /api/v1/attendants/crm
+- [x] Update Leads tracking with real data from /api/v1/leads
+- [x] Update Pipeline view with real data from /api/v1/pipelines and businesses
+- [x] Update Connections section with real data from /api/v1/instances
+- [x] Update KPI metrics with real data
+- [x] Add refresh/auto-update mechanism (30s)
+- [x] Server-side cache for fast responses (30s TTL)
+- [x] Analytics section with real charts
+- [x] Fix pipeline stage names (show real stage names from API)
+- [x] Add pagination to leads table (25 per page)
+- [x] Export data to CSV
+- [x] Fix "Failed to fetch" error - migrated from REST /api/dashboard to tRPC dashboard.full procedure

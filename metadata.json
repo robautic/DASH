@@ -1,0 +1,6 @@
+{
+  "name": "Dashboard Leads Next",
+  "description": "Dashboard de distribuição inteligente de leads e gestão de atendentes",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
