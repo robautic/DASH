@@ -77,13 +77,26 @@ export default function PipelineView({ leads, stages, onSelectLead }: PipelineVi
                 <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: stage.color }} />
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-medium text-foreground truncate">{lead.nome}</div>
-                  <div className="flex items-center gap-2 mt-0.5">
+                  <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                     <span className="text-[11px] text-muted-foreground">{lead.telefone}</span>
                     {lead.atendente && lead.atendente !== "Não atribuído" && (
                       <>
                         <span className="text-[10px] text-muted-foreground">•</span>
                         <span className="text-[11px] text-emerald-glow">{lead.atendente}</span>
                       </>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                    <span className="text-[9px] font-semibold text-blue-400 bg-blue-500/10 border border-blue-500/20 px-1.5 py-0.5 rounded uppercase tracking-wider truncate max-w-[120px]">
+                      {lead.instanciaNome || "WhatsApp"}
+                    </span>
+                    <span className="text-[9px] text-muted-foreground bg-white/5 border border-white/10 px-1.5 py-0.5 rounded truncate max-w-[120px]">
+                      {lead.source || "Meta Ads"}
+                    </span>
+                    {lead.referralHeadline && (
+                      <span className="text-[9px] text-emerald-400 italic truncate max-w-[150px]">
+                        "{lead.referralHeadline}"
+                      </span>
                     )}
                   </div>
                 </div>
