@@ -36,11 +36,9 @@ export default function Sidebar({ activeSection, onSectionChange }: SidebarProps
     <aside className="fixed left-0 top-0 bottom-0 w-64 bg-[oklch(0.12_0.02_260)] border-r border-[oklch(0.3_0.02_260/0.4)] flex flex-col z-40">
       {/* Logo */}
       <div className="p-5 flex items-center gap-3 border-b border-[oklch(0.3_0.02_260/0.4)]">
-        <img 
-          src="/manus-storage/logo-icon_43d5fc39.png" 
-          alt="Logo" 
-          className="w-9 h-9 rounded-lg object-contain"
-        />
+        <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-white"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+        </div>
         <div className="flex flex-col">
           <span className="text-sm font-bold text-foreground tracking-tight">Next Leads</span>
           <span className="text-[10px] text-muted-foreground font-medium tracking-wider uppercase">Distribuição Inteligente</span>
