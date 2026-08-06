@@ -23,19 +23,20 @@ const etapaConfig: Record<string, { color: string }> = {
 const ITEMS_PER_PAGE = 25;
 
 function exportToCSV(leads: DashboardLead[]) {
-  const headers = ["ID", "Nome", "Telefone", "Email", "Origem", "Departamento", "Atendente", "Etapa", "Status", "Criado em", "SLA Status"];
-  const rows = leads.map((l, index) => [
+  const headers = ["ID", "Nome", "Telefone", "Email", "Conexão/Instância", "Origem/Traqueamento", "Headline Anúncio", "Departamento", "Atendente", "Etapa", "Status", "Criado em"];
+  const rows = leads.map((l) => [
     `"${l.id}"`,
     `"${l.nome}"`,
     l.telefone,
     l.email || "",
-    l.source || "Meta Ads",
-    l.departamento || "Atendimento",
-    l.atendente || "Atendente Next",
-    l.etapa,
-    l.status,
+    `"${l.instanciaNome || "WhatsApp Cloud API"}"`,
+    `"${l.source || "Meta Ads"}"`,
+    `"${l.referralHeadline || ""}"`,
+    `"${l.departamento || "Atendimento"}"`,
+    `"${l.atendente || "Não atribuído"}"`,
+    `"${l.etapa}"`,
+    `"${l.status}"`,
     new Date(l.dataCriacao).toLocaleString("pt-BR"),
-    index % 4 === 0 ? "SLA Excedido" : "Dentro do SLA",
   ]);
 
   const csvContent = [headers.join(";"), ...rows.map((r) => r.join(";"))].join("\n");
@@ -206,7 +207,8 @@ export default function LeadsTable({ leads, onSelectLead }: LeadsTableProps) {
             <tr className="border-b border-[oklch(0.3_0.02_260/0.4)]">
               <th className="text-left text-[11px] font-medium text-muted-foreground uppercase tracking-wider py-3 px-3">Lead</th>
               <th className="text-left text-[11px] font-medium text-muted-foreground uppercase tracking-wider py-3 px-3">Contato</th>
-              <th className="text-left text-[11px] font-medium text-muted-foreground uppercase tracking-wider py-3 px-3">Origem</th>
+              <th className="text-left text-[11px] font-medium text-muted-foreground uppercase tracking-wider py-3 px-3">Conexão / Canal</th>
+              <th className="text-left text-[11px] font-medium text-muted-foreground uppercase tracking-wider py-3 px-3">Traqueamento (Anúncio / UTM)</th>
               <th className="text-left text-[11px] font-medium text-muted-foreground uppercase tracking-wider py-3 px-3">Departamento</th>
               <th className="text-left text-[11px] font-medium text-muted-foreground uppercase tracking-wider py-3 px-3">Atendente</th>
               <th className="text-left text-[11px] font-medium text-muted-foreground uppercase tracking-wider py-3 px-3">Etapa</th>
@@ -222,6 +224,7 @@ export default function LeadsTable({ leads, onSelectLead }: LeadsTableProps) {
               const diffMinutes = (now.getTime() - createdAt.getTime()) / (1000 * 60);
               // Consider SLA Excedido if it's "Novo Lead" and more than 5 minutes old
               const isSlaDelayed = lead.etapa === "Novo Lead" && diffMinutes > 5;
+              const instanciaName = lead.instanciaNome || "WhatsApp Cloud API";
 
               return (
                 <tr
@@ -243,14 +246,25 @@ export default function LeadsTable({ leads, onSelectLead }: LeadsTableProps) {
                     {lead.email && <div className="text-[10px] text-muted-foreground">{lead.email}</div>}
                   </td>
                   <td className="py-3 px-3">
-                    <div className="flex flex-col gap-0.5">
+                    <span className="text-[11px] font-medium text-blue-400 bg-blue-500/10 border border-blue-500/30 px-2 py-0.5 rounded-full inline-block">
+                      {instanciaName}
+                    </span>
+                  </td>
+                  <td className="py-3 px-3">
+                    <div className="flex flex-col gap-0.5 max-w-[180px]">
                       <span className="text-xs text-foreground font-medium px-2 py-0.5 rounded bg-white/5 border border-white/10 font-mono inline-block w-fit">
                         {lead.source || "Meta Ads"}
                       </span>
-                      {lead.referralHeadline && (
-                        <span className="text-[10px] text-emerald-400 font-semibold truncate max-w-[140px]" title={lead.referralHeadline}>
+                      {lead.referralHeadline ? (
+                        <span className="text-[10px] text-emerald-400 font-semibold truncate" title={lead.referralHeadline}>
                           "{lead.referralHeadline}"
                         </span>
+                      ) : lead.ctwaClid ? (
+                        <span className="text-[9px] text-muted-foreground font-mono truncate" title={lead.ctwaClid}>
+                          ID: {lead.ctwaClid.substring(0, 12)}...
+                        </span>
+                      ) : (
+                        <span className="text-[10px] text-muted-foreground/60 italic">Sem headline de anúncio</span>
                       )}
                     </div>
                   </td>
