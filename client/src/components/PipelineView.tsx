@@ -52,8 +52,8 @@ export default function PipelineView({ leads, stages, onSelectLead }: PipelineVi
       pipelineStages.length === 2 && "grid-cols-1 lg:grid-cols-2",
       pipelineStages.length >= 3 && "grid-cols-1 lg:grid-cols-3"
     )}>
-      {pipelineStages.map((stage) => (
-        <div key={stage.id} className="glass-card p-5">
+      {pipelineStages.map((stage, stageIdx) => (
+        <div key={`pipe-stage-${stage.id || stageIdx}-${stageIdx}`} className="glass-card p-5">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: stage.color }} />
@@ -64,9 +64,9 @@ export default function PipelineView({ leads, stages, onSelectLead }: PipelineVi
             </span>
           </div>
           <div className="space-y-2 max-h-96 overflow-y-auto">
-            {stage.leads.map((lead) => (
+            {stage.leads.map((lead, leadIdx) => (
               <button
-                key={lead.id}
+                key={`pipe-lead-${stage.id}-${lead.id || leadIdx}-${leadIdx}`}
                 onClick={() => onSelectLead(lead)}
                 className={cn(
                   "w-full flex items-center gap-3 p-3 rounded-lg transition-all duration-200 text-left",

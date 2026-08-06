@@ -5,7 +5,12 @@ import {
   BarChart3, 
   MessageSquare,
   Radio,
-  RefreshCw
+  RefreshCw,
+  MessageCircle,
+  Settings,
+  Target,
+  Filter,
+  Building2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -17,10 +22,13 @@ interface SidebarProps {
 const navItems = [
   { id: "overview", label: "Visão Geral", icon: LayoutDashboard },
   { id: "atendentes", label: "Atendentes", icon: Users },
+  { id: "departamentos", label: "Departamentos", icon: Building2 },
   { id: "pipeline", label: "Pipeline", icon: GitBranch },
   { id: "leads", label: "Leads", icon: MessageSquare },
+  { id: "funil", label: "Funil de Vendas", icon: Filter },
   { id: "conexoes", label: "Conexões", icon: Radio },
   { id: "analytics", label: "Analytics", icon: BarChart3 },
+  { id: "configuracoes", label: "Configurações", icon: Settings },
 ];
 
 export default function Sidebar({ activeSection, onSectionChange }: SidebarProps) {
@@ -40,7 +48,7 @@ export default function Sidebar({ activeSection, onSectionChange }: SidebarProps
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 p-3 space-y-1">
+      <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeSection === item.id;
@@ -49,7 +57,7 @@ export default function Sidebar({ activeSection, onSectionChange }: SidebarProps
               key={item.id}
               onClick={() => onSectionChange(item.id)}
               className={cn(
-                "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
+                "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer",
                 isActive
                   ? "bg-[oklch(0.72_0.19_160/0.15)] text-emerald-glow"
                   : "text-muted-foreground hover:text-foreground hover:bg-[oklch(0.2_0.02_260/0.5)]"
@@ -66,7 +74,7 @@ export default function Sidebar({ activeSection, onSectionChange }: SidebarProps
       <div className="p-4 border-t border-[oklch(0.3_0.02_260/0.4)]">
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <RefreshCw className="w-3.5 h-3.5 text-emerald-glow" />
-          <span>Conectado ao n8n</span>
+          <span>Conectado ao DataCrazy</span>
         </div>
         <div className="mt-2 flex items-center gap-2">
           <div className="w-2 h-2 rounded-full bg-emerald-glow pulse-indicator" />

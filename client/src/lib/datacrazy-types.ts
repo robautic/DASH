@@ -139,6 +139,24 @@ export interface DashboardAttendant {
   ultimasAtualizacoes: string;
 }
 
+export interface DatacrazyDepartment {
+  id: string;
+  name: string;
+  color: string;
+  main: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+  workingHours?: any;
+}
+
+export interface DashboardDepartment {
+  id: string;
+  name: string;
+  color: string;
+  main: boolean;
+  totalLeads?: number;
+}
+
 export interface DashboardLead {
   id: string;
   nome: string;
@@ -149,11 +167,33 @@ export interface DashboardLead {
   etapa: string;
   atendente: string;
   atendenteId: string | null;
+  departamento?: string;
+  departamentoCor?: string;
   dataCriacao: string;
   dataUltimaAtualizacao: string;
   status: string;
   instanciaId: string | null;
+  instanciaNome?: string;
   isPending: boolean;
+  // Automation & Ads Tracking fields
+  referralHeadline?: string;
+  referralSourceId?: string;
+  referralSourceUrl?: string;
+  ctwaClid?: string;
+  cpf?: string;
+  formAnswers?: Record<string, string>;
+  automationTrigger?: string;
+  n8nDistributed?: boolean;
+}
+
+export interface DashboardData {
+  attendants: DatacrazyAttendant[];
+  leads: DatacrazyLead[];
+  instances: DatacrazyInstance[];
+  businesses: DatacrazyBusiness[];
+  stages: DatacrazyStage[];
+  conversations: DatacrazyConversation[];
+  departments?: DatacrazyDepartment[];
 }
 
 export interface DashboardInstance {

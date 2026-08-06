@@ -34,7 +34,7 @@ export default function DatasourceCards({ datasources }: DatasourceCardsProps) {
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
         {datasources.map((ds, index) => (
           <div
-            key={ds.id}
+            key={`ds-${ds.id || index}-${index}`}
             className="glass-card glass-card-hover p-4 transition-all duration-300"
             style={{ animationDelay: `${index * 40}ms` }}
           >

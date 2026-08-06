@@ -6,14 +6,20 @@
 
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
-import { trpc } from "@/lib/trpc";
+import { useDashboard } from "@/hooks/useDashboard";
 import Sidebar from "@/components/Sidebar";
+import { GlobalTopBar } from "@/components/GlobalTopBar";
 import KPICard from "@/components/KPICard";
 import AtendenteCard from "@/components/AtendenteCard";
 import PipelineView from "@/components/PipelineView";
 import LeadsTable from "@/components/LeadsTable";
 import DatasourceCards from "@/components/DatasourceCards";
 import LeadDetailModal from "@/components/LeadDetailModal";
+import { ConfiguracoesPage } from "@/pages/ConfiguracoesPage";
+import { FunilPage } from "@/pages/FunilPage";
+import { DepartamentosPage } from "@/pages/DepartamentosPage";
+import { AgentsAdvancedView } from "@/components/agents/AgentsAdvancedView";
+import type { UserRole } from "@/types";
 import type {
   DashboardAttendant,
   DashboardLead,
@@ -74,14 +80,10 @@ export default function Home({ params }: HomeProps) {
   const [activeSection, setActiveSection] = useState(initialSection);
   const [location, setLocation] = useLocation();
   const [selectedLead, setSelectedLead] = useState<DashboardLead | null>(null);
+  const [userRole, setUserRole] = useState<UserRole>("admin");
 
-  // Use tRPC query with 30s staleTime and refetchInterval
-  const { data: rawDashboardData, isLoading, isError, error: trpcError, refetch } = trpc.dashboard.full.useQuery(undefined, {
-    staleTime: 30_000,
-    refetchInterval: 30_000,
-    retry: 3,
-    retryDelay: 2000,
-  });
+  // Use custom dashboard hook
+  const { data: rawDashboardData, isLoading, isError, error: trpcError, refetch } = useDashboard();
 
   useEffect(() => {
     if (params?.section) {
@@ -106,7 +108,15 @@ export default function Home({ params }: HomeProps) {
     : [];
 
   const leads: DashboardLead[] = data
-    ? transformLeads(data.leads || [], data.businesses || [], data.stages || [], data.instances || [])
+    ? transformLeads(
+        data.leads || [],
+        data.businesses || [],
+        data.stages || [],
+        data.instances || [],
+        data.attendants || [],
+        (data as any).departments || [],
+        data.conversations || []
+      )
     : [];
 
   const instances: DashboardInstance[] = data
@@ -181,45 +191,54 @@ export default function Home({ params }: HomeProps) {
   }
 
   return (
-    <div className="min-h-screen flex">
-      <Sidebar activeSection={activeSection} onSectionChange={handleSectionChange} />
+    <div className="min-h-screen flex flex-col">
+      <GlobalTopBar userRole={userRole} onRoleChange={setUserRole} />
+      
+      <div className="flex-1 flex">
+        <Sidebar activeSection={activeSection} onSectionChange={handleSectionChange} />
 
-      {/* Main Content */}
-      <main className="ml-64 flex-1 p-6">
-        {/* Top Bar */}
-        <div className="mb-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-xl font-bold text-foreground">
-                {activeSection === "overview" && "Visão Geral"}
-                {activeSection === "atendentes" && "Atendentes"}
-                {activeSection === "pipeline" && "Pipeline Value Promotora"}
-                {activeSection === "leads" && "Tracking de Leads"}
-                {activeSection === "conexoes" && "Conexões & Datasources"}
-                {activeSection === "analytics" && "Analytics & Métricas"}
-              </h1>
-              <p className="text-sm text-muted-foreground mt-1">
-                {activeSection === "overview" && "Distribuição inteligente de leads em tempo real"}
-                {activeSection === "atendentes" && "Monitoramento dos atendentes e carga de trabalho"}
-                {activeSection === "pipeline" && "Leads movimentando pelo pipeline Value Promotora"}
-                {activeSection === "leads" && "Todos os leads gerados pela automação Next"}
-                {activeSection === "conexoes" && "Status das conexões WhatsApp e origens de leads"}
-                {activeSection === "analytics" && "Métricas detalhadas de performance e conversão"}
-              </p>
-            </div>
-            <div className="flex items-center gap-3">
-              {data && (
-                <button
-                  onClick={handleRefresh}
-                  className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-emerald-glow bg-emerald-glow/10 border border-emerald-glow/20 rounded-lg hover:bg-emerald-glow/20 transition-all"
-                >
-                  <RefreshCw className="w-3.5 h-3.5" />
-                  <span>Atualizar</span>
-                </button>
-              )}
+        {/* Main Content */}
+        <main className="ml-64 flex-1 p-6">
+          {/* Header Title */}
+          <div className="mb-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-xl font-bold text-foreground">
+                  {activeSection === "overview" && "Visão Geral & Dashboard Executivo"}
+                  {activeSection === "atendentes" && "Gestão Profissional de Atendentes"}
+                  {activeSection === "departamentos" && "Departamentos & Filas de Atendimento"}
+                  {activeSection === "pipeline" && "Pipeline Value Promotora"}
+                  {activeSection === "leads" && "Tracking Avançado de Leads"}
+                  {activeSection === "funil" && "Funil de Conversão Comercial"}
+                  {activeSection === "conexoes" && "Conexões & Datasources"}
+                  {activeSection === "analytics" && "Analytics & Métricas"}
+                  {activeSection === "configuracoes" && "Configurações"}
+                </h1>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {activeSection === "overview" && "Distribuição inteligente de leads em tempo real"}
+                  {activeSection === "atendentes" && "KPIs de produtividade, SLA de 1ª resposta e metas por equipe"}
+                  {activeSection === "departamentos" && "Sincronizado com API Datacrazy (Atendimento, Value Promotora, Next)"}
+                  {activeSection === "pipeline" && "Leads movimentando pelo pipeline Value Promotora"}
+                  {activeSection === "leads" && "Filtros por atendente, origem, campanha e SLA"}
+                  {activeSection === "funil" && "Mapeamento completo da jornada do lead"}
+                  {activeSection === "conexoes" && "Status das conexões WhatsApp e origens de leads"}
+                  {activeSection === "analytics" && "Métricas detalhadas de performance e conversão"}
+                  {activeSection === "configuracoes" && "Configurações de API, tokens e webhooks"}
+                </p>
+              </div>
+              <div className="flex items-center gap-3">
+                {data && (
+                  <button
+                    onClick={handleRefresh}
+                    className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-emerald-glow bg-emerald-glow/10 border border-emerald-glow/20 rounded-lg hover:bg-emerald-glow/20 transition-all cursor-pointer"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                    <span>Atualizar</span>
+                  </button>
+                )}
+              </div>
             </div>
           </div>
-        </div>
 
         {/* Overview Section */}
         {activeSection === "overview" && (
@@ -364,7 +383,7 @@ export default function Home({ params }: HomeProps) {
                   const stageColor = stage.name === "Novo Lead" ? "#3B82F6" : stage.name === "Em atendimento" ? "#f59e0b" : stage.name === "Ganho" || stage.name === "won" ? "#10b981" : stage.name === "Perdido" || stage.name === "lost" ? "#ef4444" : "#8b5cf6";
                   const stageLeads = leads.filter((l: DashboardLead) => l.etapa === stage.name);
                   return (
-                    <div key={stage.id} className="relative p-5 rounded-lg bg-[oklch(0.16_0.02_260/0.5)] border border-white/10">
+                    <div key={`summary-${stage.id}`} className="relative p-5 rounded-lg bg-[oklch(0.16_0.02_260/0.5)] border border-white/10">
                       <div className="absolute top-3 right-3 w-3 h-3 rounded-full" style={{ backgroundColor: stageColor }} />
                       <h4 className="text-sm font-semibold text-foreground mb-2">{stage.name}</h4>
                       <p className="text-3xl font-bold font-mono" style={{ color: stageColor }}>
@@ -387,70 +406,15 @@ export default function Home({ params }: HomeProps) {
         {/* Atendentes Section */}
         {activeSection === "atendentes" && (
           <div className="stagger-enter space-y-6">
-            {/* Status overview */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="glass-card p-5 flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-muted-foreground">Online</p>
-                  <p className="text-2xl font-bold font-mono text-emerald-glow">
-                    {attendants.filter(a => a.status === "online").length}
-                  </p>
-                </div>
-                <div className="w-3 h-3 rounded-full bg-emerald-glow" />
-              </div>
-              <div className="glass-card p-5 flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-muted-foreground">Ocupado</p>
-                  <p className="text-2xl font-bold font-mono text-[oklch(0.75_0.15_85)]">
-                    {attendants.filter(a => a.status === "ocupado").length}
-                  </p>
-                </div>
-                <div className="w-3 h-3 rounded-full bg-[oklch(0.75_0.15_85)]" />
-              </div>
-              <div className="glass-card p-5 flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-muted-foreground">Offline</p>
-                  <p className="text-2xl font-bold font-mono text-muted-foreground">
-                    {attendants.filter(a => a.status === "offline").length}
-                  </p>
-                </div>
-                <div className="w-3 h-3 rounded-full bg-muted-foreground" />
-              </div>
-            </div>
-
-            {/* Attendants chart */}
-            {atendentesChartData.length > 0 && (
-              <div className="glass-card p-5">
-                <h3 className="text-sm font-semibold text-foreground mb-4">Leads por Atendente</h3>
-                <ResponsiveContainer width="100%" height={280}>
-                  <BarChart data={atendentesChartData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="oklch(0.3 0.02 260 / 0.3)" />
-                    <XAxis dataKey="name" stroke="oklch(0.65 0.02 260)" fontSize={11} />
-                    <YAxis stroke="oklch(0.65 0.02 260)" fontSize={11} />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: "oklch(0.16 0.02 260 / 0.95)",
-                        border: "1px solid oklch(0.3 0.02 260 / 0.5)",
-                        borderRadius: "8px",
-                        color: "oklch(0.95 0.01 260)",
-                        fontSize: "12px",
-                      }}
-                    />
-                    <Bar dataKey="atribuidos" name="Atribuídos" fill="#10b981" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="atendendo" name="Atendendo" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            )}
-
-            {/* Attendants grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {attendants.map((atendente) => (
-                <AtendenteCard key={atendente.id} atendente={atendente} />
-              ))}
-            </div>
+            <AgentsAdvancedView attendants={attendants} />
           </div>
         )}
+
+        {/* Departamentos Section */}
+        {activeSection === "departamentos" && <DepartamentosPage />}
+
+        {/* Funil Section */}
+        {activeSection === "funil" && <FunilPage leads={leads} />}
 
         {/* Pipeline Section */}
         {activeSection === "pipeline" && (
@@ -473,11 +437,11 @@ export default function Home({ params }: HomeProps) {
 
               {/* Dynamic Stages */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {((data?.stages as any[]) || []).map((stage: any) => {
+                {((data?.stages as any[]) || []).map((stage: any, idx: number) => {
                   const stageColor = stage.name === "Novo Lead" ? "#3B82F6" : stage.name === "Em atendimento" ? "#f59e0b" : stage.name === "Ganho" || stage.name === "won" ? "#10b981" : stage.name === "Perdido" || stage.name === "lost" ? "#ef4444" : "#8b5cf6";
                   const stageLeads = leads.filter((l: DashboardLead) => l.etapa === stage.name);
                   return (
-                    <div key={stage.id} className="relative p-5 rounded-lg bg-[oklch(0.16_0.02_260/0.5)] border border-white/10">
+                    <div key={`stage-${stage.id || idx}-${idx}`} className="relative p-5 rounded-lg bg-[oklch(0.16_0.02_260/0.5)] border border-white/10">
                       <div className="absolute top-3 right-3 w-3 h-3 rounded-full" style={{ backgroundColor: stageColor }} />
                       <h4 className="text-sm font-semibold text-foreground mb-2">{stage.name}</h4>
                       <p className="text-3xl font-bold font-mono" style={{ color: stageColor }}>
@@ -533,8 +497,8 @@ export default function Home({ params }: HomeProps) {
                     .filter(a => a.status !== "offline")
                     .sort((a, b) => b.taxaResposta - a.taxaResposta)
                     .slice(0, 10)
-                    .map((a) => (
-                      <div key={a.id} className="flex items-center gap-3">
+                    .map((a, idx) => (
+                      <div key={`attendant-${a.id || idx}-${idx}`} className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-full bg-[oklch(0.2_0.02_260)] flex items-center justify-center text-xs font-bold text-foreground flex-shrink-0">
                           {a.name.split(" ").map(n => n[0]).join("").substring(0, 2)}
                         </div>
@@ -561,7 +525,7 @@ export default function Home({ params }: HomeProps) {
                 {leadsPorDatasource.length > 0 ? (
                   <div className="space-y-3">
                     {leadsPorDatasource.map((ds, i) => (
-                      <div key={i} className="flex items-center gap-3">
+                      <div key={(ds as any).id || ds.name || i} className="flex items-center gap-3">
                         <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: ds.color }} />
                         <span className="text-xs text-muted-foreground w-24 truncate">{ds.name || "Desconhecido"}</span>
                         <div className="flex-1 h-2 bg-[oklch(0.16_0.02_260)] rounded-full overflow-hidden">
@@ -619,11 +583,15 @@ export default function Home({ params }: HomeProps) {
           </div>
         )}
 
+        {/* Configuracoes Section */}
+        {activeSection === "configuracoes" && <ConfiguracoesPage />}
+
         {/* Lead Detail Modal */}
         {selectedLead && (
           <LeadDetailModal lead={selectedLead} onClose={() => setSelectedLead(null)} />
         )}
-      </main>
+        </main>
+      </div>
     </div>
   );
 }

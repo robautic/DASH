@@ -450,9 +450,9 @@
   // Fetch Interception
   // ==========================================================================
 
-  var originalFetch = window.fetch.bind(window);
+  var originalFetch = typeof window.fetch === "function" ? window.fetch.bind(window) : null;
 
-  window.fetch = function (input, init) {
+  var customFetch = function (input, init) {
     init = init || {};
     var startTime = Date.now();
     // Handle string, Request object, or URL object
@@ -589,6 +589,22 @@
         throw error;
       });
   };
+
+  if (originalFetch) {
+    try {
+      window.fetch = customFetch;
+    } catch (e) {
+      try {
+        Object.defineProperty(window, "fetch", {
+          value: customFetch,
+          writable: true,
+          configurable: true,
+        });
+      } catch (err) {
+        // window.fetch cannot be re-defined
+      }
+    }
+  }
 
   // ==========================================================================
   // XHR Interception

@@ -63,7 +63,7 @@ const trpcClient = trpc.createClient({
         return {};
       },
       fetch(input, init) {
-        return globalThis.fetch(input, {
+        return window.fetch(input, {
           ...(init ?? {}),
           credentials: "include",
         });

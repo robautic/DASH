@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 import type { DashboardLead } from "@/lib/datacrazy-types";
-import { X, User, Phone, GitBranch, Clock } from "lucide-react";
+import { X, User, Phone, GitBranch, Clock, MessageSquare, ShieldAlert, CheckCircle2 } from "lucide-react";
 
 interface LeadDetailModalProps {
   lead: DashboardLead | null;
@@ -28,13 +28,48 @@ export default function LeadDetailModal({ lead, onClose }: LeadDetailModalProps)
     }
   };
 
+  const mockTimelineEvents = [
+    {
+      id: "1",
+      title: "Lead Criado via Automação",
+      desc: `Origem: ${lead.source || "Meta Ads"}`,
+      time: lead.dataCriacao,
+      icon: CheckCircle2,
+      color: "text-emerald-glow",
+    },
+    {
+      id: "2",
+      title: "Atribuído ao Atendente",
+      desc: `Responsável: ${lead.atendente}`,
+      time: lead.dataCriacao,
+      icon: User,
+      color: "text-blue-400",
+    },
+    {
+      id: "3",
+      title: "Primeira Mensagem Enviada",
+      desc: "Primeiro contato efetuado via WhatsApp Cloud API",
+      time: lead.dataUltimaAtualizacao,
+      icon: MessageSquare,
+      color: "text-purple-400",
+    },
+    {
+      id: "4",
+      title: `Etapa Atual: ${lead.etapa}`,
+      desc: "Proposta em andamento",
+      time: lead.dataUltimaAtualizacao,
+      icon: GitBranch,
+      color: "text-amber-400",
+    },
+  ];
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative glass-card w-full max-w-lg p-6 animate-in fade-in zoom-in-95 duration-200">
+      <div className="relative glass-card w-full max-w-lg p-6 animate-in fade-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-1.5 rounded-lg hover:bg-[oklch(0.2_0.02_260/0.5)] transition-colors"
+          className="absolute top-4 right-4 p-1.5 rounded-lg hover:bg-[oklch(0.2_0.02_260/0.5)] transition-colors cursor-pointer"
         >
           <X className="w-4 h-4 text-muted-foreground" />
         </button>
@@ -46,79 +81,145 @@ export default function LeadDetailModal({ lead, onClose }: LeadDetailModalProps)
             <h3 className="text-lg font-bold text-foreground">{lead.nome}</h3>
             <span className="text-xs font-mono text-muted-foreground">{lead.id}</span>
           </div>
-          <span className={cn("text-[11px] font-medium px-2.5 py-1 rounded-full", cfg.color)}>
-            {cfg.label}
-          </span>
+          <span className={cn("text-[11px] font-medium px-2.5 py-1 rounded-full", cfg.color)}>{cfg.label}</span>
         </div>
 
-        {/* Details */}
+        {/* Details Grid */}
         <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-4 bg-[oklch(0.12_0.02_260)] p-4 rounded-xl border border-[oklch(0.3_0.02_260/0.3)]">
             <div className="flex items-center gap-2">
               <Phone className="w-4 h-4 text-muted-foreground" />
               <div>
                 <div className="text-[11px] text-muted-foreground">Telefone</div>
-                <div className="text-sm font-medium text-foreground">{lead.telefone || "N/A"}</div>
+                <div className="text-xs font-medium text-foreground">{lead.telefone || "N/A"}</div>
               </div>
             </div>
             <div className="flex items-center gap-2">
               <GitBranch className="w-4 h-4 text-muted-foreground" />
               <div>
-                <div className="text-[11px] text-muted-foreground">Origem</div>
-                <div className="text-sm font-medium text-foreground">{lead.source || "n8n"}</div>
+                <div className="text-[11px] text-muted-foreground">Origem / Canal</div>
+                <div className="text-xs font-medium text-foreground">{lead.source || "Meta Ads"}</div>
               </div>
             </div>
             <div className="flex items-center gap-2">
               <User className="w-4 h-4 text-muted-foreground" />
               <div>
                 <div className="text-[11px] text-muted-foreground">Atendente</div>
-                <div className="text-sm font-medium text-foreground">{lead.atendente}</div>
+                <div className="text-xs font-medium text-foreground">{lead.atendente}</div>
               </div>
             </div>
             <div className="flex items-center gap-2">
               <GitBranch className="w-4 h-4 text-muted-foreground" />
               <div>
-                <div className="text-[11px] text-muted-foreground">Pipeline</div>
-                <div className="text-sm font-medium text-foreground">{lead.pipeline}</div>
+                <div className="text-[11px] text-muted-foreground">Departamento</div>
+                <div
+                  className="text-xs font-semibold px-2 py-0.5 rounded text-white inline-block mt-0.5"
+                  style={{ backgroundColor: lead.departamentoCor || "#EA580C" }}
+                >
+                  {lead.departamento || "Atendimento"}
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Timeline */}
-          <div className="pt-4 border-t border-[oklch(0.3_0.02_260/0.3)]">
-            <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">Histórico</h4>
-            <div className="space-y-3">
-              <div className="flex items-start gap-3">
-                <div className="w-2 h-2 rounded-full bg-emerald-glow mt-1.5 flex-shrink-0" />
+          {/* Traqueamento de Automação & Meta Ads */}
+          <div className="p-4 rounded-xl bg-blue-950/20 border border-blue-500/20 space-y-3">
+            <div className="flex items-center justify-between">
+              <h4 className="text-xs font-bold text-blue-400 uppercase tracking-wider flex items-center gap-1.5">
+                <CheckCircle2 className="w-3.5 h-3.5 text-blue-400" />
+                Dados de Automação & Traqueamento de Anúncio
+              </h4>
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-500/10 text-blue-300 border border-blue-500/30">
+                n8n Roteado
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
+              {lead.instanciaNome && (
                 <div>
-                  <div className="text-sm text-foreground">Lead criado</div>
-                  <div className="text-[11px] text-muted-foreground flex items-center gap-1">
-                    <Clock className="w-3 h-3" />
-                    {formatDateTime(lead.dataCriacao)}
-                  </div>
+                  <span className="text-muted-foreground block text-[10px]">Instância / Conexão:</span>
+                  <span className="font-semibold text-foreground">{lead.instanciaNome}</span>
                 </div>
-              </div>
-              {lead.etapa === "Em atendimento" && (
-                <div className="flex items-start gap-3">
-                  <div className="w-2 h-2 rounded-full bg-[oklch(0.65_0.22_250)] mt-1.5 flex-shrink-0" />
-                  <div>
-                    <div className="text-sm text-foreground">Movido para atendimento</div>
-                    <div className="text-[11px] text-muted-foreground flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      {formatDateTime(lead.dataUltimaAtualizacao)}
-                    </div>
-                  </div>
+              )}
+              {lead.referralHeadline && (
+                <div>
+                  <span className="text-muted-foreground block text-[10px]">Headline do Anúncio:</span>
+                  <span className="font-semibold text-emerald-400">"{lead.referralHeadline}"</span>
+                </div>
+              )}
+              {lead.referralSourceId && (
+                <div>
+                  <span className="text-muted-foreground block text-[10px]">Meta Source ID:</span>
+                  <span className="font-mono text-muted-foreground text-[11px]">{lead.referralSourceId}</span>
+                </div>
+              )}
+              {lead.cpf && (
+                <div>
+                  <span className="text-muted-foreground block text-[10px]">CPF Informado:</span>
+                  <span className="font-mono text-foreground font-semibold">{lead.cpf}</span>
+                </div>
+              )}
+              {lead.ctwaClid && (
+                <div className="col-span-2">
+                  <span className="text-muted-foreground block text-[10px]">Click ID CTWA (Meta Ads):</span>
+                  <span className="font-mono text-[10px] text-muted-foreground block truncate bg-black/40 p-1 rounded">
+                    {lead.ctwaClid}
+                  </span>
                 </div>
               )}
             </div>
+
+            {/* Form Answers if present */}
+            {lead.formAnswers && Object.keys(lead.formAnswers).length > 0 && (
+              <div className="mt-3 pt-3 border-t border-blue-500/20 space-y-1.5">
+                <span className="text-[11px] font-bold text-foreground block">Respostas do Formulário:</span>
+                {Object.entries(lead.formAnswers).map(([q, a]) => (
+                  <div key={q} className="flex flex-col text-[11px] bg-black/30 p-2 rounded">
+                    <span className="text-muted-foreground text-[10px] font-medium">{q}</span>
+                    <span className="text-foreground font-semibold">{a}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
-          {/* Etapa */}
+          {/* Timeline Completa */}
           <div className="pt-4 border-t border-[oklch(0.3_0.02_260/0.3)]">
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-muted-foreground">Etapa atual</span>
-              <span className="text-sm font-semibold text-foreground">{lead.etapa}</span>
+            <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-1.5">
+              <Clock className="w-3.5 h-3.5 text-emerald-glow" />
+              Timeline do Lead (Histórico de Interações)
+            </h4>
+
+            <div className="space-y-3 relative pl-4 border-l border-[oklch(0.3_0.02_260/0.4)]">
+              {mockTimelineEvents.map((evt) => {
+                const IconComponent = evt.icon;
+                return (
+                  <div key={evt.id} className="relative group">
+                    <div className="absolute -left-[21px] top-0.5 w-3 h-3 rounded-full bg-[oklch(0.12_0.02_260)] border border-emerald-glow flex items-center justify-center">
+                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-glow" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <IconComponent className={cn("w-3.5 h-3.5", evt.color)} />
+                        <span className="text-xs font-semibold text-foreground">{evt.title}</span>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">{evt.desc}</p>
+                      <span className="text-[10px] text-muted-foreground/70 font-mono mt-0.5 block">
+                        {formatDateTime(evt.time)}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
+          </div>
+
+          {/* Current Stage */}
+          <div className="pt-4 border-t border-[oklch(0.3_0.02_260/0.3)] flex items-center justify-between">
+            <span className="text-xs text-muted-foreground">Etapa atual no Pipeline</span>
+            <span className="text-xs font-bold text-emerald-glow px-2.5 py-1 rounded bg-emerald-glow/10 border border-emerald-glow/20">
+              {lead.etapa}
+            </span>
           </div>
         </div>
       </div>
