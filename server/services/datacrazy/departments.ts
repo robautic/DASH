@@ -8,29 +8,38 @@ export async function fetchDepartments() {
       timeout: 15000,
     });
     return normalizeResponse(data);
-  } catch (error) {
-    console.error("[Departments] Error fetching departments from messaging API:", error);
-    // Return standard fallback if offline
+  } catch (error: any) {
+    console.warn("[Departments] API unavailable or token expired, using fallback departments:", error?.response?.status || error?.message || error);
     return {
-      count: 3,
+      count: 4,
       data: [
-        {
-          id: "6a5c2ecba547652405c67b0e",
-          name: "Atendimento",
-          color: "#EA580C",
-          main: true,
-        },
         {
           id: "6a6cbce0d97edaaf109fd343",
           name: "Value Promotora",
           color: "#10B981",
           main: false,
+          createdAt: "2026-07-31T15:18:56.627Z",
         },
         {
           id: "6a6d00427006365c0797014d",
           name: "Next",
           color: "#3B82F6",
+          main: true,
+          createdAt: "2026-07-31T20:06:26.103Z",
+        },
+        {
+          id: "6a74e1b26d5e83c9651f1da3",
+          name: "Melhor Negócio Veículos",
+          color: "#FF0000",
           main: false,
+          createdAt: "2026-08-06T19:34:10.854Z",
+        },
+        {
+          id: "6a74e2061d5c1092e04892d6",
+          name: "Auxílio Acidente",
+          color: "#22D3EE",
+          main: false,
+          createdAt: "2026-08-06T19:35:34.938Z",
         },
       ],
     };

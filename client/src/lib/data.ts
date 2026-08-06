@@ -186,9 +186,10 @@ export function transformLeads(
   conversations: DatacrazyConversation[] = []
 ): DashboardLead[] {
   const defaultDepts = [
-    { id: "6a5c2ecba547652405c67b0e", name: "Atendimento", color: "#EA580C" },
     { id: "6a6cbce0d97edaaf109fd343", name: "Value Promotora", color: "#10B981" },
     { id: "6a6d00427006365c0797014d", name: "Next", color: "#3B82F6" },
+    { id: "6a74e1b26d5e83c9651f1da3", name: "Melhor Negócio Veículos", color: "#FF0000" },
+    { id: "6a74e2061d5c1092e04892d6", name: "Auxílio Acidente", color: "#22D3EE" },
   ];
 
   const depts = departments.length > 0 ? departments : defaultDepts;
@@ -236,40 +237,130 @@ export function transformLeads(
       attendantName = "Não atribuído";
     }
 
-    // Department resolution based on real mapping rules provided by user
-    const attendantToDept: Record<string, string> = {
-      "Ana Carol": "Value Promotora",
-      "Ana Flávia": "Next",
-      "Ana Julia": "Melhor Negócio Veículos",
-      "Ana Laura": "Auxílio Acidente",
-      "Ana Martins": "Value Promotora",
-      "Ana Nascimento": "Next",
-      "Anieli": "Melhor Negócio Veículos",
-      "Assessoria": "Auxílio Acidente",
-      "Auyra": "Value Promotora",
-      "Beatriz Silva": "Next",
-      "Bianca": "Value Promotora",
-      "Bruna": "Melhor Negócio Veículos",
-      "Camila": "Auxílio Acidente"
+    // Comprehensive Department Resolution
+    const ALL_KNOWN_DEPTS = [
+      { id: "6a6cbce0d97edaaf109fd343", name: "Value Promotora", color: "#10B981" },
+      { id: "6a6d00427006365c0797014d", name: "Next", color: "#3B82F6" },
+      { id: "6a74e1b26d5e83c9651f1da3", name: "Melhor Negócio Veículos", color: "#FF0000" },
+      { id: "6a74e2061d5c1092e04892d6", name: "Auxílio Acidente", color: "#22D3EE" },
+    ];
+
+    const findDeptByName = (nameStr?: string | null) => {
+      if (!nameStr) return null;
+      const lower = nameStr.toLowerCase().trim();
+      const inApi = depts.find((d) => d.name.toLowerCase().trim() === lower);
+      if (inApi) return inApi;
+      const inMaster = ALL_KNOWN_DEPTS.find((d) => d.name.toLowerCase().trim() === lower);
+      if (inMaster) return inMaster;
+      if (lower.includes("value")) return ALL_KNOWN_DEPTS[0];
+      if (lower.includes("next")) return ALL_KNOWN_DEPTS[1];
+      if (lower.includes("veículo") || lower.includes("veiculo") || lower.includes("melhor negócio") || lower.includes("melhor negocio")) return ALL_KNOWN_DEPTS[2];
+      if (lower.includes("acidente") || lower.includes("auxílio") || lower.includes("auxilio") || lower.includes("assessoria")) return ALL_KNOWN_DEPTS[3];
+      return null;
     };
 
-    let dept: any = { name: "Atendimento", color: "#EA580C" };
-    
-    // Check real mapping
-    if (attendantName && attendantToDept[attendantName]) {
-      const mappedDeptName = attendantToDept[attendantName];
-      const found = depts.find((d) => d.name === mappedDeptName);
-      if (found) {
-        dept = found;
-      } else {
-        dept = { id: mappedDeptName, name: mappedDeptName, color: "#EA580C" };
+    const attendantToDeptMap: Record<string, string> = {
+      "ana carol": "Value Promotora",
+      "ana flavia": "Next",
+      "ana flávia": "Next",
+      "ana julia": "Melhor Negócio Veículos",
+      "ana júlia": "Melhor Negócio Veículos",
+      "ana laura": "Auxílio Acidente",
+      "ana martins": "Value Promotora",
+      "ana nascimento": "Next",
+      "anieli": "Melhor Negócio Veículos",
+      "assessoria": "Auxílio Acidente",
+      "auyra": "Value Promotora",
+      "beatriz": "Next",
+      "beatriz silva": "Next",
+      "bianca": "Value Promotora",
+      "bruna": "Melhor Negócio Veículos",
+      "camila": "Auxílio Acidente",
+      "valeska": "Value Promotora",
+    };
+
+    let dept: any = null;
+
+    // 1. Explicit Lead / Conversation department string if non-generic
+    const rawLeadDept = (lead as any).departmentName || (typeof (lead as any).department === "object" ? (lead as any).department?.name : typeof (lead as any).department === "string" ? (lead as any).department : null);
+    const rawConvDept = (matchedConv as any)?.departmentName || (matchedConv as any)?.department?.name || (typeof (matchedConv as any)?.department === "string" ? (matchedConv as any).department : null);
+
+    if (rawLeadDept && rawLeadDept.toLowerCase() !== "atendimento") {
+      dept = findDeptByName(rawLeadDept);
+    }
+    if (!dept && rawConvDept && rawConvDept.toLowerCase() !== "atendimento") {
+      dept = findDeptByName(rawConvDept);
+    }
+
+    // 2. Attendant name mapping
+    if (!dept && attendantName && attendantName !== "Não atribuído") {
+      const attLower = attendantName.toLowerCase().trim();
+      for (const [key, targetDeptName] of Object.entries(attendantToDeptMap)) {
+        if (attLower.includes(key)) {
+          dept = findDeptByName(targetDeptName);
+          break;
+        }
       }
-    } else if ((lead as any).departmentId) {
-      const found = depts.find((d) => d.id === (lead as any).departmentId);
-      if (found) dept = found;
-    } else if ((lead as any).departmentName) {
-      const found = depts.find((d) => d.name === (lead as any).departmentName);
-      if (found) dept = found;
+    }
+
+    // 3. Attendant object department in attendants list
+    if (!dept && attendantId) {
+      const attObj = attendants.find((a) => a.id === attendantId || a.userId === attendantId);
+      if (attObj) {
+        const attDeptName = (attObj as any).departmentName || (attObj as any).department?.name;
+        if (attDeptName) {
+          dept = findDeptByName(attDeptName);
+        }
+      }
+    }
+
+    // 4. Instance / WhatsApp Connection
+    if (!dept) {
+      const instName = (lead as any).instanceName || (matchedConv as any)?.instanceName;
+      if (instName) {
+        const d = findDeptByName(instName);
+        if (d && d.name !== "Atendimento") dept = d;
+      }
+    }
+
+    // 5. Pipeline / Referral Headline
+    if (!dept) {
+      const pipeName = (biz as any)?.stage?.pipeline?.name || (lead as any).source;
+      const refHeadline = (lead as any).referralHeadline || (matchedConv as any)?.referralHeadline;
+      if (pipeName) {
+        const d = findDeptByName(pipeName);
+        if (d && d.name !== "Atendimento") dept = d;
+      }
+      if (!dept && refHeadline) {
+        const d = findDeptByName(refHeadline);
+        if (d && d.name !== "Atendimento") dept = d;
+      }
+    }
+
+    // 6. Department ID
+    if (!dept) {
+      const leadDeptId = (lead as any).departmentId || (typeof (lead as any).department === "object" ? (lead as any).department?.id : null);
+      const convDeptId = (matchedConv as any)?.departmentId || (matchedConv as any)?.department?.id;
+
+      if (leadDeptId) {
+        dept = depts.find((d) => d.id === leadDeptId) || ALL_KNOWN_DEPTS.find((d) => d.id === leadDeptId);
+      }
+      if (!dept && convDeptId) {
+        dept = depts.find((d) => d.id === convDeptId) || ALL_KNOWN_DEPTS.find((d) => d.id === convDeptId);
+      }
+    }
+
+    // 7. Generic Lead/Conv department string if present
+    if (!dept && rawLeadDept) {
+      dept = findDeptByName(rawLeadDept);
+    }
+    if (!dept && rawConvDept) {
+      dept = findDeptByName(rawConvDept);
+    }
+
+    // 8. Fallback
+    if (!dept) {
+      dept = depts[0] || ALL_KNOWN_DEPTS[0];
     }
 
     // Pipeline mapping based on department if possible

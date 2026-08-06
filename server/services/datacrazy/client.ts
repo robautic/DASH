@@ -1,15 +1,18 @@
 import axios from "axios";
 
 const BASE_URL = "https://api.g1.datacrazy.io";
-const FALLBACK_TOKEN = "dc_eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhNzRjOGI3MmVjNjU3YjRlZTJmOGRkZCIsInRlbmFudElkIjoiMDQ4Yzc5OGQtNTNhNi00Nzg3LWE1NGMtMjU5MTIyOTZhYTZlIiwibmFtZSI6InRlc3RlIiwicm9sZXMiOlsiYWRtaW4iXSwiaXNBZG1pbiI6dHJ1ZSwiaWF0IjoxNzg2MDM4NDU1fQ.W8QYuQ48tnyRH0ILWuxPcnTej84i8qorJTSHNrJU_DY";
+const FALLBACK_TOKEN =
+  process.env.DATACRAZY_API_TOKEN ||
+  "eyJhbGciOiJSUzI1NiIsImtpZCI6IjIwY2FkODZkNzY5ZmFkZTViODkxNmQ5Y2U1MDc0YzgyMGYwNjdkNTIiLCJ0eXAiOiJKV1QifQ.eyJuYW1lIjoiQXNzZXNzb3JpYSIsInRlbmFudElkIjoiMDQ4Yzc5OGQtNTNhNi00Nzg3LWE1NGMtMjU5MTIyOTZhYTZlIiwicm9sZXMiOlsiYWRtaW4iXSwiaXNBZG1pbiI6dHJ1ZSwiaXNzIjoiaHR0cHM6Ly9zZWN1cmV0b2tlbi5nb29nbGUuY29tL2RhdGFjcmF6eS12Mi1wcm9kIiwiYXVkIjoiZGF0YWNyYXp5LXYyLXByb2QiLCJhdXRoX3RpbWUiOjE3ODYwNTA3NDMsInVzZXJfaWQiOiJXMlNpbE4yUUJLZndXVG9tSTVMSFp1cE84NzcyIiwic3ViIjoiVzJTaWxOMlFCS2Z3V1RvbUk1TEhadXBPODc3MiIsImlhdCI6MTc4NjA1NjE2MywiZXhwIjoxNzg2MDU5NzYzLCJlbWFpbCI6ImFzc2Vzc29yaWFzaWdtYTI2QGdtYWlsLmNvbSJ9.yMkBBfQkV9jlcF66G5oJrFKTrIXsnu9ilCDeNl7xRDZzJjtrB9DP6_VtSKIXmnnJ9-yg7Nsz5YSjAx4HghWkq1GS0aCPdApTq9G8WKtLzqjKNLa2nN9Hv09PupLnk3vFuZHAhziJViWO4pd9MEq4_7G-WTGG2na_73D2y5K6ah-XpE0edzCMY_MOc-es9rkiFNQjwtDnYTxgHIT-GKkxqW6EkKlFfIlY5_NZO82OlS1F4rSVtmfCCNQkk2uFjl2u6GsttgZjBH8UlHk6wjqfcxLeigIHcnlKWrp3ynnqpSCJ1ObzS7gg4HVGDky9rbHPsO4pp9UYJnzEJYDUknM7mQ";
 
 export function getHeaders() {
   const token = process.env.DATACRAZY_API_TOKEN || FALLBACK_TOKEN;
   return {
     Authorization: `Bearer ${token}`,
     "Content-Type": "application/json",
-    "x-user-id": "IQfQSYE3LBYla4gvJhwIIuw7ou23",
-    "x-user-email": "valesca.support@datacrazy.io",
+    "x-dz-tenantid": "048c798d-53a6-4787-a54c-25912296aa6e",
+    "x-user-id": "W2SilN2QBKfwWTomI5LHZupO8772",
+    "x-user-email": "assessoriasigma26@gmail.com",
     "x-timezone": "America/Sao_Paulo",
     "x-hostname": "https://crm.datacrazy.io",
     "x-language": "pt",
