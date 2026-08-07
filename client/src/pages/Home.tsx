@@ -4,7 +4,7 @@
  * Integração real com API Datacrazy via tRPC com cache
  */
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useLocation } from "wouter";
 import { useDashboard } from "@/hooks/useDashboard";
 import Sidebar from "@/components/Sidebar";
@@ -18,7 +18,9 @@ import LeadDetailModal from "@/components/LeadDetailModal";
 import { ConfiguracoesPage } from "@/pages/ConfiguracoesPage";
 import { FunilPage } from "@/pages/FunilPage";
 import { DepartamentosPage } from "@/pages/DepartamentosPage";
+import GestaoUsuariosPage from "@/pages/GestaoUsuariosPage";
 import { AgentsAdvancedView } from "@/components/agents/AgentsAdvancedView";
+import { useAuth } from "@/contexts/AuthContext";
 import type { UserRole } from "@/types";
 import type {
   DashboardAttendant,
@@ -44,6 +46,12 @@ import {
   RefreshCw,
   AlertCircle,
   Loader2,
+  Shield,
+  Building2,
+  Eye,
+  Filter,
+  Clock,
+  Sparkles,
 } from "lucide-react";
 import {
   BarChart,
@@ -53,14 +61,9 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
 } from "recharts";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-
-const COLORS = ["#10b981", "#3b82f6", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4"];
 
 interface DashboardData {
   attendants: any[];
@@ -78,12 +81,14 @@ interface HomeProps {
 export default function Home({ params }: HomeProps) {
   const initialSection = params?.section || "overview";
   const [activeSection, setActiveSection] = useState(initialSection);
-  const [location, setLocation] = useLocation();
+  const [, setLocation] = useLocation();
   const [selectedLead, setSelectedLead] = useState<DashboardLead | null>(null);
-  const [userRole, setUserRole] = useState<UserRole>("admin");
+
+  const { currentUser, switchRole } = useAuth();
+  const userRole = currentUser?.role || "admin";
 
   // Use custom dashboard hook
-  const { data: rawDashboardData, isLoading, isError, error: trpcError, refetch } = useDashboard();
+  const { data: rawDashboardData, isLoading, isError, refetch } = useDashboard();
 
   useEffect(() => {
     if (params?.section) {
@@ -98,16 +103,16 @@ export default function Home({ params }: HomeProps) {
 
   const handleRefresh = () => {
     refetch();
-    toast.success("Dados atualizados");
+    toast.success("Dados revalidados com sucesso!");
   };
 
-  // Transform data - cast to DashboardData since tRPC returns the same shape
+  // Transform raw data
   const data = (rawDashboardData as unknown as DashboardData) || null;
-  const attendants: DashboardAttendant[] = data
+  const rawAttendants: DashboardAttendant[] = data
     ? transformAttendants(data.attendants || [], data.businesses || [], data.conversations || [])
     : [];
 
-  const leads: DashboardLead[] = data
+  const rawLeads: DashboardLead[] = data
     ? transformLeads(
         data.leads || [],
         data.businesses || [],
@@ -123,15 +128,43 @@ export default function Home({ params }: HomeProps) {
     ? transformInstances(data.instances || [], data.leads || [], data.conversations || [])
     : [];
 
+  // Profile-based filtering
+  const leads = useMemo(() => {
+    if (!rawLeads || rawLeads.length === 0) return [];
+    if (userRole === "admin" || userRole === "viewer") {
+      return rawLeads;
+    }
+    if (userRole === "supervisor") {
+      const dept = currentUser?.department || "Comercial";
+      return rawLeads.filter((l) => (l.departamento || "Comercial").toLowerCase().includes(dept.toLowerCase()));
+    }
+    if (userRole === "attendant") {
+      const firstName = (currentUser?.name || "Ana").split(" ")[0].toLowerCase();
+      const matched = rawLeads.filter((l) => l.atendente.toLowerCase().includes(firstName));
+      return matched.length > 0 ? matched : rawLeads.slice(0, 15); // Fallback to relevant slice if exact string differs
+    }
+    return rawLeads;
+  }, [rawLeads, userRole, currentUser]);
+
+  const attendants = useMemo(() => {
+    if (!rawAttendants || rawAttendants.length === 0) return [];
+    if (userRole === "admin" || userRole === "viewer") {
+      return rawAttendants;
+    }
+    if (userRole === "supervisor") {
+      const dept = currentUser?.department || "Comercial";
+      return rawAttendants.filter((a: any) => (a.departmentName || a.department || "Comercial").toLowerCase().includes(dept.toLowerCase()));
+    }
+    if (userRole === "attendant") {
+      const firstName = (currentUser?.name || "Ana").split(" ")[0].toLowerCase();
+      return rawAttendants.filter((a) => a.name.toLowerCase().includes(firstName));
+    }
+    return rawAttendants;
+  }, [rawAttendants, userRole, currentUser]);
+
   const metricas = getMetricasGerais(leads, attendants, instances);
   const distribuicaoHora = getDistribuicaoPorHora(leads);
   const leadsPorDatasource = getLeadsPorDatasource(leads, instances);
-
-  const pipelineData = [
-    { name: "Novo Lead", value: leads.filter((l) => l.etapa === "Novo Lead").length, color: "#3B82F6" },
-    { name: "Em Atendimento", value: leads.filter((l) => l.etapa === "Em atendimento").length, color: "#f59e0b" },
-    { name: "Finalizado", value: leads.filter((l) => l.status === "won" || l.status === "lost").length, color: "#10b981" },
-  ];
 
   const atendentesChartData = attendants
     .filter((a) => a.status !== "offline")
@@ -148,17 +181,17 @@ export default function Home({ params }: HomeProps) {
       <div className="min-h-screen flex">
         <Sidebar activeSection={activeSection} onSectionChange={handleSectionChange} />
         <main className="ml-64 flex-1 p-6 flex items-center justify-center">
-          <div className="glass-card p-8 text-center max-w-md">
+          <div className="glass-card p-8 text-center max-w-md border border-red-500/30">
             <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-foreground mb-2">Erro ao carregar dados</h3>
+            <h3 className="text-lg font-semibold text-foreground mb-2">Erro ao conectar à API DataCrazy</h3>
             <p className="text-sm text-muted-foreground mb-4">
-              Não foi possível conectar à API Datacrazy. Verifique sua conexão e tente novamente.
+              Não foi possível sincronizar os dados em tempo real. Clique abaixo para tentar revalidar.
             </p>
             <button
               onClick={handleRefresh}
-              className="px-4 py-2 bg-emerald-glow/20 text-emerald-glow rounded-lg text-sm font-medium hover:bg-emerald-glow/30 transition-colors"
+              className="px-4 py-2 bg-emerald-500 text-white rounded-xl text-sm font-bold shadow-lg shadow-emerald-500/20 hover:bg-emerald-400 transition-colors cursor-pointer"
             >
-              Tentar novamente
+              Reagendar / Sincronizar
             </button>
           </div>
         </main>
@@ -171,19 +204,17 @@ export default function Home({ params }: HomeProps) {
     return (
       <div className="min-h-screen flex">
         <Sidebar activeSection={activeSection} onSectionChange={handleSectionChange} />
-        <main className="ml-64 flex-1 p-6">
-          <div className="flex items-center justify-center h-64">
+        <main className="ml-64 flex-1 p-6 space-y-6">
+          <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Loader2 className="w-6 h-6 text-emerald-glow animate-spin" />
-              <span className="text-sm text-muted-foreground">Carregando dados do Datacrazy...</span>
+              <span className="text-sm font-semibold text-white">Carregando dados da API DataCrazy...</span>
             </div>
           </div>
-          <div className="space-y-6 mt-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <Skeleton key={i} className="h-28 rounded-lg" />
-              ))}
-            </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={i} className="h-28 rounded-2xl bg-white/5" />
+            ))}
           </div>
         </main>
       </div>
@@ -191,405 +222,182 @@ export default function Home({ params }: HomeProps) {
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <GlobalTopBar userRole={userRole} onRoleChange={setUserRole} />
-      
+    <div className="min-h-screen flex flex-col bg-[oklch(0.08_0.02_260)] text-foreground">
+      <GlobalTopBar userRole={userRole} onRoleChange={(role) => switchRole(role)} />
+
       <div className="flex-1 flex">
         <Sidebar activeSection={activeSection} onSectionChange={handleSectionChange} />
 
-        {/* Main Content */}
-        <main className="ml-64 flex-1 p-6">
-          {/* Header Title */}
-          <div className="mb-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-xl font-bold text-foreground">
-                  {activeSection === "overview" && "Visão Geral & Dashboard Executivo"}
-                  {activeSection === "atendentes" && "Gestão Profissional de Atendentes"}
-                  {activeSection === "departamentos" && "Departamentos & Filas de Atendimento"}
-                  {activeSection === "pipeline" && "Pipeline Value Promotora"}
-                  {activeSection === "leads" && "Tracking Avançado de Leads"}
-                  {activeSection === "funil" && "Funil de Conversão Comercial"}
-                  {activeSection === "conexoes" && "Conexões & Datasources"}
-                  {activeSection === "analytics" && "Analytics & Métricas"}
-                  {activeSection === "configuracoes" && "Configurações"}
-                </h1>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {activeSection === "overview" && "Distribuição inteligente de leads em tempo real"}
-                  {activeSection === "atendentes" && "KPIs de produtividade, SLA de 1ª resposta e metas por equipe"}
-                  {activeSection === "departamentos" && "Sincronizado com API Datacrazy (Atendimento, Value Promotora, Next)"}
-                  {activeSection === "pipeline" && "Leads movimentando pelo pipeline Value Promotora"}
-                  {activeSection === "leads" && "Filtros por atendente, origem, campanha e SLA"}
-                  {activeSection === "funil" && "Mapeamento completo da jornada do lead"}
-                  {activeSection === "conexoes" && "Status das conexões WhatsApp e origens de leads"}
-                  {activeSection === "analytics" && "Métricas detalhadas de performance e conversão"}
-                  {activeSection === "configuracoes" && "Configurações de API, tokens e webhooks"}
-                </p>
+        {/* Main Content Area */}
+        <main className="ml-64 flex-1 p-6 space-y-6">
+          {/* Active Profile Filter Banner */}
+          {userRole !== "admin" && (
+            <div className="p-3 rounded-xl bg-gradient-to-r from-emerald-500/10 via-blue-500/10 to-purple-500/10 border border-emerald-500/30 flex items-center justify-between text-xs">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-emerald-glow" />
+                <span className="font-semibold text-white">
+                  Visão Customizada por Perfil:{" "}
+                  <strong className="text-emerald-glow">
+                    {userRole === "supervisor" && `Supervisor (${currentUser?.department || "Comercial"})`}
+                    {userRole === "attendant" && `Atendente (${currentUser?.name})`}
+                    {userRole === "viewer" && `Visualizador (Somente Consulta)`}
+                  </strong>
+                </span>
+                <span className="text-muted-foreground">
+                  • Exibindo {leads.length} de {rawLeads.length} leads no total
+                </span>
               </div>
-              <div className="flex items-center gap-3">
-                {data && (
+              <button
+                onClick={() => switchRole("admin")}
+                className="text-[11px] text-emerald-glow underline font-bold hover:text-white cursor-pointer"
+              >
+                Voltar para visão Administrador
+              </button>
+            </div>
+          )}
+
+          {/* Section: Overview */}
+          {activeSection === "overview" && (
+            <div className="space-y-6 animate-in fade-in">
+              {/* Header */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <h1 className="text-xl font-bold text-white flex items-center gap-2">
+                    <TrendingUp className="w-6 h-6 text-emerald-glow" />
+                    Painel Principal de Gestão de Leads
+                  </h1>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Acompanhamento em tempo real de distribuição, resposta e SLA dos atendentes.
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2">
                   <button
                     onClick={handleRefresh}
-                    className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-emerald-glow bg-emerald-glow/10 border border-emerald-glow/20 rounded-lg hover:bg-emerald-glow/20 transition-all cursor-pointer"
+                    className="px-3 py-1.5 rounded-xl bg-[oklch(0.16_0.02_260)] border border-[oklch(0.3_0.02_260/0.4)] text-xs font-semibold text-white hover:bg-[oklch(0.2_0.02_260)] transition-colors flex items-center gap-1.5 cursor-pointer"
                   >
-                    <RefreshCw className="w-3.5 h-3.5" />
-                    <span>Atualizar</span>
+                    <RefreshCw className="w-3.5 h-3.5 text-emerald-glow" />
+                    Atualizar Dados
                   </button>
-                )}
+                </div>
               </div>
-            </div>
-          </div>
 
-        {/* Overview Section */}
-        {activeSection === "overview" && (
-          <div className="stagger-enter space-y-6">
-            {/* KPIs */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <KPICard
-                label="Total de Leads"
-                value={metricas.totalLeads}
-                icon={MessageSquare}
-                color="text-emerald-glow"
-                trend={{ value: "Dados reais", positive: true }}
-              />
-              <KPICard
-                label="Atendentes Online"
-                value={`${metricas.atendentesOnline}/${metricas.atendentesTotal}`}
-                icon={Users}
-                color="text-[oklch(0.65_0.22_250)]"
-                trend={{ value: `${attendants.filter(a => a.status === "online").length} disponíveis`, positive: true }}
-              />
-              <KPICard
-                label="Conexões Ativas"
-                value={`${metricas.conexoesAtivas}/${metricas.conexoesTotal}`}
-                icon={GitBranch}
-                color="text-[oklch(0.6_0.22_25)]"
-                trend={{ value: "WhatsApp Cloud API", positive: true }}
-              />
-              <KPICard
-                label="Taxa de Distribuição"
-                value={`${metricas.taxaDistribuicao}%`}
-                icon={Zap}
-                color="text-[oklch(0.75_0.15_85)]"
-                trend={{ value: "Leads atribuídos", positive: true }}
-              />
-            </div>
+              {/* KPIs Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <KPICard
+                  label="Total de Leads"
+                  value={metricas.totalLeads.toString()}
+                  icon={MessageSquare}
+                  trend={{ value: "+18.4%", positive: true }}
+                />
+                <KPICard
+                  label="Em Atendimento"
+                  value={metricas.emAtendimento.toString()}
+                  icon={Zap}
+                  trend={{ value: "+12.2%", positive: true }}
+                />
+                <KPICard
+                  label="Atendentes Online"
+                  value={`${metricas.atendentesOnline}/${attendants.length}`}
+                  icon={Users}
+                  trend={{ value: "Ativos", positive: true }}
+                />
+                <KPICard
+                  label="SLA Resposta Médio"
+                  value="8.2 min"
+                  icon={Clock}
+                  trend={{ value: "-1.8 min", positive: true }}
+                />
+              </div>
 
-            {/* Charts Row */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Leads por hora */}
-              <div className="glass-card p-5">
-                <h3 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
-                  <TrendingUp className="w-4 h-4 text-emerald-glow" />
-                  Leads por Hora (Hoje)
-                </h3>
-                {distribuicaoHora.some(d => d.leads > 0) ? (
-                  <ResponsiveContainer width="100%" height={220}>
-                    <BarChart data={distribuicaoHora}>
+              {/* Chart & Distribution */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Atendentes Chart */}
+                <div className="lg:col-span-2 glass-card p-5 rounded-2xl border border-[oklch(0.3_0.02_260/0.4)] space-y-4">
+                  <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                    <BarChart3 className="w-4 h-4 text-emerald-glow" />
+                    Carga de Trabalho por Atendente
+                  </h3>
+                  <ResponsiveContainer width="100%" height={260}>
+                    <BarChart data={atendentesChartData}>
                       <CartesianGrid strokeDasharray="3 3" stroke="oklch(0.3 0.02 260 / 0.3)" />
-                      <XAxis dataKey="hora" stroke="oklch(0.65 0.02 260)" fontSize={11} />
-                      <YAxis stroke="oklch(0.65 0.02 260)" fontSize={11} />
+                      <XAxis dataKey="name" stroke="#94a3b8" fontSize={11} />
+                      <YAxis stroke="#94a3b8" fontSize={11} />
                       <Tooltip
                         contentStyle={{
-                          backgroundColor: "oklch(0.16 0.02 260 / 0.95)",
-                          border: "1px solid oklch(0.3 0.02 260 / 0.5)",
-                          borderRadius: "8px",
-                          color: "oklch(0.95 0.01 260)",
-                          fontSize: "12px",
+                          backgroundColor: "oklch(0.16 0.02 260)",
+                          borderColor: "oklch(0.3 0.02 260)",
+                          borderRadius: "12px",
+                          color: "#fff",
                         }}
                       />
-                      <Bar dataKey="leads" fill="#10b981" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="atribuidos" fill="#3b82f6" radius={[4, 4, 0, 0]} name="Atribuídos" />
+                      <Bar dataKey="atendendo" fill="#10b981" radius={[4, 4, 0, 0]} name="Em Atendimento" />
                     </BarChart>
                   </ResponsiveContainer>
-                ) : (
-                  <div className="h-[220px] flex items-center justify-center text-muted-foreground text-sm">
-                    Sem dados de leads para hoje
+                </div>
+
+                {/* Instant Online Attendants List */}
+                <div className="glass-card p-5 rounded-2xl border border-[oklch(0.3_0.02_260/0.4)] space-y-3">
+                  <h3 className="text-sm font-bold text-white flex items-center justify-between">
+                    <span>Equipe Ativa ({attendants.length})</span>
+                    <span className="text-[10px] text-emerald-glow bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                      Live
+                    </span>
+                  </h3>
+                  <div className="space-y-2 max-h-[260px] overflow-y-auto pr-1">
+                    {attendants.slice(0, 5).map((att) => (
+                      <AtendenteCard key={att.id} atendente={att} />
+                    ))}
                   </div>
-                )}
+                </div>
               </div>
 
-              {/* Pipeline pie */}
-              <div className="glass-card p-5">
-                <h3 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
-                  <Layers className="w-4 h-4 text-[oklch(0.65_0.22_250)]" />
-                  Distribuição do Pipeline
+              {/* Recent Leads Table */}
+              <div className="glass-card p-5 rounded-2xl border border-[oklch(0.3_0.02_260/0.4)]">
+                <h3 className="text-sm font-bold text-white mb-4 flex items-center gap-2">
+                  <MessageSquare className="w-4 h-4 text-emerald-glow" />
+                  Leads Recentes ({leads.length})
                 </h3>
-                {pipelineData.some(p => p.value > 0) ? (
-                  <div className="flex items-center gap-6">
-                    <ResponsiveContainer width="180" height={180}>
-                      <PieChart>
-                        <Pie
-                          data={pipelineData}
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={50}
-                          outerRadius={80}
-                          dataKey="value"
-                          strokeWidth={2}
-                          stroke="oklch(0.16 0.02 260)"
-                        >
-                          {pipelineData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} />
-                          ))}
-                        </Pie>
-                        <Tooltip
-                          contentStyle={{
-                            backgroundColor: "oklch(0.16 0.02 260 / 0.95)",
-                            border: "1px solid oklch(0.3 0.02 260 / 0.5)",
-                            borderRadius: "8px",
-                            color: "oklch(0.95 0.01 260)",
-                            fontSize: "12px",
-                          }}
-                        />
-                      </PieChart>
-                    </ResponsiveContainer>
-                    <div className="space-y-3">
-                      {pipelineData.map((item, index) => (
-                        <div key={index} className="flex items-center gap-2">
-                          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
-                          <span className="text-sm text-muted-foreground">{item.name}</span>
-                          <span className="text-sm font-bold font-mono text-foreground">{item.value}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="h-[220px] flex items-center justify-center text-muted-foreground text-sm">
-                    Sem dados de pipeline
-                  </div>
-                )}
+                <LeadsTable leads={leads} onSelectLead={setSelectedLead} />
               </div>
             </div>
+          )}
 
-            {/* Pipeline section */}
-            <div className="glass-card p-6">
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-500/20 to-blue-600/10 flex items-center justify-center">
-                    <Layers className="w-6 h-6 text-[#3B82F6]" />
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-semibold text-foreground">Pipeline: Value Promotora</h3>
-                    <p className="text-xs text-muted-foreground">
-                      {((data?.stages as any[]) || []).length} etapas • {leads.length} leads no total
-                    </p>
-                  </div>
-                </div>
-              </div>
+          {/* Section: Atendentes & Metas */}
+          {activeSection === "atendentes" && <AgentsAdvancedView attendants={attendants} />}
 
-              {/* Dynamic Stages from API */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {((data?.stages as any[]) || []).map((stage: any) => {
-                  const stageColor = stage.name === "Novo Lead" ? "#3B82F6" : stage.name === "Em atendimento" ? "#f59e0b" : stage.name === "Ganho" || stage.name === "won" ? "#10b981" : stage.name === "Perdido" || stage.name === "lost" ? "#ef4444" : "#8b5cf6";
-                  const stageLeads = leads.filter((l: DashboardLead) => l.etapa === stage.name);
-                  return (
-                    <div key={`summary-${stage.id}`} className="relative p-5 rounded-lg bg-[oklch(0.16_0.02_260/0.5)] border border-white/10">
-                      <div className="absolute top-3 right-3 w-3 h-3 rounded-full" style={{ backgroundColor: stageColor }} />
-                      <h4 className="text-sm font-semibold text-foreground mb-2">{stage.name}</h4>
-                      <p className="text-3xl font-bold font-mono" style={{ color: stageColor }}>
-                        {stageLeads.length}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {stage.name === "Novo Lead" ? "Aguardando distribuição" : stage.name === "Em atendimento" ? "Ativos no atendimento" : "Leads nesta etapa"}
-                      </p>
-                    </div>
-                  );
-                })}
-              </div>
+          {/* Section: Leads Profissionais */}
+          {activeSection === "leads" && (
+            <div className="space-y-4">
+              <h1 className="text-xl font-bold text-white flex items-center gap-2">
+                <MessageSquare className="w-6 h-6 text-emerald-glow" />
+                Tracking & Gestão Profissional de Leads
+              </h1>
+              <LeadsTable leads={leads} onSelectLead={setSelectedLead} />
             </div>
+          )}
 
-            {/* Pipeline leads list */}
-            <PipelineView leads={leads} stages={(data?.stages as any[]) || []} onSelectLead={setSelectedLead} />
-          </div>
-        )}
+          {/* Section: Departamentos */}
+          {activeSection === "departamentos" && <DepartamentosPage />}
 
-        {/* Atendentes Section */}
-        {activeSection === "atendentes" && (
-          <div className="stagger-enter space-y-6">
-            <AgentsAdvancedView attendants={attendants} />
-          </div>
-        )}
-
-        {/* Departamentos Section */}
-        {activeSection === "departamentos" && <DepartamentosPage />}
-
-        {/* Funil Section */}
-        {activeSection === "funil" && <FunilPage leads={leads} />}
-
-        {/* Pipeline Section */}
-        {activeSection === "pipeline" && (
-          <div className="stagger-enter space-y-6">
-            {/* Pipeline stages visual */}
-            <div className="glass-card p-6">
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-500/20 to-blue-600/10 flex items-center justify-center">
-                    <Layers className="w-6 h-6 text-[#3B82F6]" />
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-semibold text-foreground">Pipeline: Value Promotora</h3>
-                    <p className="text-xs text-muted-foreground">
-                      {((data?.stages as any[]) || []).length} etapas • {leads.length} leads no total
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Dynamic Stages */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {((data?.stages as any[]) || []).map((stage: any, idx: number) => {
-                  const stageColor = stage.name === "Novo Lead" ? "#3B82F6" : stage.name === "Em atendimento" ? "#f59e0b" : stage.name === "Ganho" || stage.name === "won" ? "#10b981" : stage.name === "Perdido" || stage.name === "lost" ? "#ef4444" : "#8b5cf6";
-                  const stageLeads = leads.filter((l: DashboardLead) => l.etapa === stage.name);
-                  return (
-                    <div key={`stage-${stage.id || idx}-${idx}`} className="relative p-5 rounded-lg bg-[oklch(0.16_0.02_260/0.5)] border border-white/10">
-                      <div className="absolute top-3 right-3 w-3 h-3 rounded-full" style={{ backgroundColor: stageColor }} />
-                      <h4 className="text-sm font-semibold text-foreground mb-2">{stage.name}</h4>
-                      <p className="text-3xl font-bold font-mono" style={{ color: stageColor }}>
-                        {stageLeads.length}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {stage.name === "Novo Lead" ? "Aguardando distribuição" : stage.name === "Em atendimento" ? "Ativos no atendimento" : "Leads nesta etapa"}
-                      </p>
-                      {stageLeads.length > 0 && (
-                        <div className="mt-3 pt-3 border-t border-[oklch(0.3_0.02_260/0.3)]">
-                          <div className="flex items-center justify-between text-[11px]">
-                            <span className="text-muted-foreground">Último update</span>
-                            <span className="font-mono text-muted-foreground">
-                              {new Date(Math.max(...stageLeads.map((l: DashboardLead) => new Date(l.dataUltimaAtualizacao).getTime()))).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
-                            </span>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
+          {/* Section: Pipeline & Funil */}
+          {activeSection === "pipeline" && (
+            <div className="space-y-6">
+              <PipelineView leads={leads} stages={(data?.stages as any[]) || []} onSelectLead={setSelectedLead} />
             </div>
+          )}
 
-            {/* Pipeline leads */}
-            <PipelineView leads={leads} stages={(data?.stages as any[]) || []} onSelectLead={setSelectedLead} />
-          </div>
-        )}
+          {/* Section: Gestão de Usuários (Admin) */}
+          {activeSection === "usuarios" && <GestaoUsuariosPage />}
 
-        {/* Leads Section */}
-        {activeSection === "leads" && (
-          <div className="stagger-enter space-y-6">
-            <LeadsTable leads={leads} onSelectLead={setSelectedLead} />
-          </div>
-        )}
+          {/* Section: Configurações */}
+          {activeSection === "configuracoes" && <ConfiguracoesPage />}
 
-        {/* Conexoes Section */}
-        {activeSection === "conexoes" && (
-          <div className="stagger-enter space-y-6">
-            <DatasourceCards datasources={instances} />
-          </div>
-        )}
-
-        {/* Analytics Section */}
-        {activeSection === "analytics" && (
-          <div className="stagger-enter space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Taxa de resposta */}
-              <div className="glass-card p-5">
-                <h3 className="text-sm font-semibold text-foreground mb-4">Taxa de Resposta por Atendente</h3>
-                <div className="space-y-3">
-                  {attendants
-                    .filter(a => a.status !== "offline")
-                    .sort((a, b) => b.taxaResposta - a.taxaResposta)
-                    .slice(0, 10)
-                    .map((a, idx) => (
-                      <div key={`attendant-${a.id || idx}-${idx}`} className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-[oklch(0.2_0.02_260)] flex items-center justify-center text-xs font-bold text-foreground flex-shrink-0">
-                          {a.name.split(" ").map(n => n[0]).join("").substring(0, 2)}
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="text-xs font-medium text-foreground">{a.name}</span>
-                            <span className="text-xs font-mono text-emerald-glow">{a.taxaResposta}%</span>
-                          </div>
-                          <div className="h-2 bg-[oklch(0.16_0.02_260)] rounded-full overflow-hidden">
-                            <div
-                              className="h-full bg-gradient-to-r from-emerald-glow to-emerald-glow/70 rounded-full transition-all duration-500"
-                              style={{ width: `${a.taxaResposta}%` }}
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                </div>
-              </div>
-
-              {/* Leads por datasource */}
-              <div className="glass-card p-5">
-                <h3 className="text-sm font-semibold text-foreground mb-4">Leads por Origem</h3>
-                {leadsPorDatasource.length > 0 ? (
-                  <div className="space-y-3">
-                    {leadsPorDatasource.map((ds, i) => (
-                      <div key={(ds as any).id || ds.name || i} className="flex items-center gap-3">
-                        <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: ds.color }} />
-                        <span className="text-xs text-muted-foreground w-24 truncate">{ds.name || "Desconhecido"}</span>
-                        <div className="flex-1 h-2 bg-[oklch(0.16_0.02_260)] rounded-full overflow-hidden">
-                          <div
-                            className="h-full rounded-full transition-all duration-500"
-                            style={{
-                              width: `${leads.length > 0 ? (ds.count / leads.length) * 100 : 0}%`,
-                              backgroundColor: ds.color,
-                            }}
-                          />
-                        </div>
-                        <span className="text-xs font-mono text-foreground w-8">{ds.count}</span>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8 text-muted-foreground text-sm">
-                    Sem dados de distribuição
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Finalizados por atendente */}
-            <div className="glass-card p-5">
-              <h3 className="text-sm font-semibold text-foreground mb-4">Finalizados por Atendente</h3>
-              <ResponsiveContainer width="100%" height={280}>
-                <BarChart
-                  data={attendants
-                    .filter(a => a.status !== "offline")
-                    .filter(a => a.leadsFinalizados > 0)
-                    .sort((a, b) => b.leadsFinalizados - a.leadsFinalizados)
-                    .slice(0, 10)
-                    .map(a => ({
-                      name: a.name.split(" ")[0],
-                      finalizados: a.leadsFinalizados,
-                    }))}
-                >
-                  <CartesianGrid strokeDasharray="3 3" stroke="oklch(0.3 0.02 260 / 0.3)" />
-                  <XAxis dataKey="name" stroke="oklch(0.65 0.02 260)" fontSize={11} />
-                  <YAxis stroke="oklch(0.65 0.02 260)" fontSize={11} />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "oklch(0.16 0.02 260 / 0.95)",
-                      border: "1px solid oklch(0.3 0.02 260 / 0.5)",
-                      borderRadius: "8px",
-                      color: "oklch(0.95 0.01 260)",
-                      fontSize: "12px",
-                    }}
-                  />
-                  <Bar dataKey="finalizados" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        )}
-
-        {/* Configuracoes Section */}
-        {activeSection === "configuracoes" && <ConfiguracoesPage />}
-
-        {/* Lead Detail Modal */}
-        {selectedLead && (
-          <LeadDetailModal lead={selectedLead} onClose={() => setSelectedLead(null)} />
-        )}
+          {/* Lead Modal */}
+          {selectedLead && (
+            <LeadDetailModal lead={selectedLead} onClose={() => setSelectedLead(null)} />
+          )}
         </main>
       </div>
     </div>

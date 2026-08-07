@@ -1,4 +1,4 @@
-export type UserRole = "admin" | "supervisor" | "attendant";
+export type UserRole = "admin" | "supervisor" | "attendant" | "viewer";
 
 export interface LeadFilter {
   search?: string;

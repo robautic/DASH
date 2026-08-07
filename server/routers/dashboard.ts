@@ -1,75 +1,31 @@
 import { publicProcedure, router } from "../_core/trpc";
 import { z } from "zod";
-import { getCachedDashboardData, setCachedDashboardData } from "../cache/dashboard";
+import { getDashboardStore } from "../cache/store";
+import { runSyncWorker } from "../services/datacrazy/syncWorker";
 import { fetchAttendants, fetchInstances } from "../services/datacrazy/agents";
-import { fetchLeads, fetchBusinesses, fetchPipelines, fetchPipelineStages, fetchAllLeads, fetchAllBusinesses } from "../services/datacrazy/leads";
-import { fetchConversations, fetchAllConversations } from "../services/datacrazy/conversations";
+import { fetchLeads, fetchBusinesses, fetchPipelines, fetchPipelineStages } from "../services/datacrazy/leads";
+import { fetchConversations } from "../services/datacrazy/conversations";
 import { fetchDepartments } from "../services/datacrazy/departments";
-
-const PIPELINE_VALUE_ID = "3922b55e-f151-4fa4-ac85-9f2767272419";
-
-async function getDashboardFull() {
-  const cached = getCachedDashboardData("dashboard");
-  if (cached) return cached;
-
-  const pause = () => new Promise((r) => setTimeout(r, 200));
-
-  const attendants = await fetchAttendants().catch(() => ({ data: [] }));
-  await pause();
-  const departments = await fetchDepartments().catch(() => ({ data: [] }));
-  await pause();
-  const instances = await fetchInstances().catch(() => ({ data: [] }));
-  await pause();
-  const stages = await fetchPipelineStages(PIPELINE_VALUE_ID).catch(() => ({ data: [] }));
-  await pause();
-  const leads = await fetchAllLeads().catch(() => ({ data: [] }));
-  await pause();
-  const businesses = await fetchAllBusinesses().catch(() => ({ data: [] }));
-  await pause();
-  const conversations = await fetchAllConversations().catch(() => ({ data: [] }));
-
-  const attData = attendants.data || [];
-  const leadsData = leads.data || [];
-  const instData = instances.data || [];
-  const bizData = businesses.data || [];
-  const stagesData = stages.data || [];
-  const convData = conversations.data || [];
-  const deptData = departments.data || [];
-
-  const result = {
-    attendants: attData,
-    leads: leadsData,
-    instances: instData,
-    businesses: bizData,
-    stages: stagesData,
-    conversations: convData,
-    departments: deptData,
-  };
-
-  setCachedDashboardData(result, "dashboard");
-  return result;
-}
 
 export const dashboardRouter = router({
   full: publicProcedure.query(async () => {
     try {
-      return await getDashboardFull();
+      const store = getDashboardStore();
+      // If store hasn't synced yet, run worker in background and return store
+      if (store.lastSyncTime === 0 && !store.isSyncing) {
+        runSyncWorker().catch(console.error);
+      }
+      return store;
     } catch (error) {
       console.error("[DashboardRouter] Error fetching full data:", error);
-      return {
-        attendants: [],
-        leads: [],
-        instances: [],
-        businesses: [],
-        stages: [],
-        conversations: [],
-        departments: [],
-      };
+      return getDashboardStore();
     }
   }),
 
   departments: publicProcedure.query(async () => {
     try {
+      const store = getDashboardStore();
+      if (store.departments && store.departments.length > 0) return store.departments;
       const result = await fetchDepartments();
       return result.data || [];
     } catch (error) {
@@ -80,6 +36,8 @@ export const dashboardRouter = router({
 
   attendants: publicProcedure.query(async () => {
     try {
+      const store = getDashboardStore();
+      if (store.attendants && store.attendants.length > 0) return store.attendants;
       const result = await fetchAttendants();
       return result.data || [];
     } catch (error) {
@@ -97,6 +55,11 @@ export const dashboardRouter = router({
     )
     .query(async ({ input }) => {
       try {
+        const store = getDashboardStore();
+        if (store.leads && store.leads.length > 0) {
+          const sliced = store.leads.slice(input.skip, input.skip + input.take);
+          return { count: store.leads.length, data: sliced };
+        }
         const result = await fetchLeads(input.skip, input.take);
         return { count: result.count || result.data?.length || 0, data: result.data || [] };
       } catch (error) {
@@ -107,6 +70,10 @@ export const dashboardRouter = router({
 
   instances: publicProcedure.query(async () => {
     try {
+      const store = getDashboardStore();
+      if (store.instances && store.instances.length > 0) {
+        return { count: store.instances.length, data: store.instances };
+      }
       const result = await fetchInstances();
       return { count: result.count || result.data?.length || 0, data: result.data || [] };
     } catch (error) {
@@ -125,6 +92,11 @@ export const dashboardRouter = router({
     )
     .query(async ({ input }) => {
       try {
+        const store = getDashboardStore();
+        if (store.businesses && store.businesses.length > 0) {
+          const sliced = store.businesses.slice(input.skip, input.skip + input.take);
+          return { count: store.businesses.length, data: sliced };
+        }
         const filters: Record<string, string> = {};
         if (input.pipelineId) {
           filters.pipelineId = input.pipelineId;
@@ -151,6 +123,10 @@ export const dashboardRouter = router({
     .input(z.object({ pipelineId: z.string() }))
     .query(async ({ input }) => {
       try {
+        const store = getDashboardStore();
+        if (store.stages && store.stages.length > 0) {
+          return { count: store.stages.length, data: store.stages };
+        }
         const result = await fetchPipelineStages(input.pipelineId);
         return { count: result.count || result.data?.length || 0, data: result.data || [] };
       } catch (error) {
@@ -168,6 +144,11 @@ export const dashboardRouter = router({
     )
     .query(async ({ input }) => {
       try {
+        const store = getDashboardStore();
+        if (store.conversations && store.conversations.length > 0) {
+          const sliced = store.conversations.slice(input.skip, input.skip + input.take);
+          return { count: store.conversations.length, data: sliced };
+        }
         const result = await fetchConversations(input.skip, input.take);
         return { count: result.count || 0, data: result.data || [] };
       } catch (error) {
