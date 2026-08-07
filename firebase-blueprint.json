@@ -1,0 +1,51 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "System user with roles and permissions for Sigma Assessoria",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "role": { "type": "string", "enum": ["admin", "supervisor", "atendente"] },
+        "department": { "type": "string" },
+        "status": { "type": "string", "enum": ["online", "offline", "ausente"] }
+      },
+      "required": ["id", "name", "email", "role"]
+    },
+    "Lead": {
+      "title": "Lead",
+      "description": "Sales lead record",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "nome": { "type": "string" },
+        "telefone": { "type": "string" },
+        "etapa": { "type": "string" },
+        "status": { "type": "string" },
+        "atendente": { "type": "string" },
+        "departamento": { "type": "string" },
+        "valor": { "type": "number" },
+        "origem": { "type": "string" }
+      },
+      "required": ["id", "nome"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "allow": {
+        "read": "true",
+        "write": "true"
+      }
+    },
+    "/leads/{leadId}": {
+      "schema": { "$ref": "#/entities/Lead" },
+      "allow": {
+        "read": "true",
+        "write": "true"
+      }
+    }
+  }
+}

@@ -63,8 +63,8 @@ export default function Sidebar({ activeSection, onSectionChange }: SidebarProps
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-white"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
         </div>
         <div className="flex flex-col">
-          <span className="text-sm font-bold text-foreground tracking-tight">Next Leads</span>
-          <span className="text-[10px] text-muted-foreground font-medium tracking-wider uppercase">Distribuição Inteligente</span>
+          <span className="text-sm font-bold text-foreground tracking-tight">Sigma Assessoria</span>
+          <span className="text-[10px] text-muted-foreground font-medium tracking-wider uppercase">Gestão & Distribuição</span>
         </div>
       </div>
 

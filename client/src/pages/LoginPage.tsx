@@ -81,7 +81,7 @@ export default function LoginPage({ onSuccess }: LoginPageProps) {
               <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
             </svg>
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-white">Next Leads</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-white">Sigma Assessoria</h1>
           <p className="text-xs text-muted-foreground">Sistema de Gestão & Distribuição Inteligente de Leads</p>
         </div>
 

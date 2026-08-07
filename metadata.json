@@ -1,6 +1,6 @@
 {
-  "name": "Dashboard Leads Next",
-  "description": "Dashboard de distribuição inteligente de leads e gestão de atendentes",
+  "name": "Sigma Assessoria",
+  "description": "Sistema de gestão de leads e distribuição inteligente para Sigma Assessoria",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
