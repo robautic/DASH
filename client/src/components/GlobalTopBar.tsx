@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Search, Bell, Shield, User, ChevronDown, Clock, Eye, Building2 } from "lucide-react";
 import { UserRole } from "@/types";
 import { useAuth } from "@/contexts/AuthContext";
+import { useDashboard } from "@/hooks/useDashboard";
 
 interface GlobalTopBarProps {
   userRole: UserRole;
@@ -15,11 +16,27 @@ export function GlobalTopBar({ userRole, onRoleChange }: GlobalTopBarProps) {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showRoleDropdown, setShowRoleDropdown] = useState(false);
 
-  const mockSlaAlerts = [
-    { id: "1", leadName: "Valeska Souza", timeOverdue: "18 min", attendant: "Ana Carol" },
-    { id: "2", leadName: "Marcos Ribeiro", timeOverdue: "24 min", attendant: "Bruno Costa" },
-    { id: "3", leadName: "Fernanda Lima", timeOverdue: "12 min", attendant: "Camila Rocha" },
-  ];
+  const { data } = useDashboard();
+  
+  // Calcular SLAs estourados
+  const slaAlerts = (data?.leads || [])
+    .filter((lead: any) => {
+      const createdAt = new Date(lead.dataCriacao);
+      const now = new Date();
+      const diffMinutes = (now.getTime() - createdAt.getTime()) / (1000 * 60);
+      return lead.etapa === "Novo Lead" && diffMinutes > 15;
+    })
+    .map((lead: any) => {
+      const createdAt = new Date(lead.dataCriacao);
+      const diffMinutes = Math.floor((new Date().getTime() - createdAt.getTime()) / (1000 * 60));
+      return {
+        id: lead.id,
+        leadName: lead.nome,
+        timeOverdue: `${diffMinutes} min`,
+        attendant: lead.atendente || "Não atribuído"
+      };
+    })
+    .slice(0, 5); // Take top 5
 
   const getRoleDisplay = (role: UserRole) => {
     switch (role) {
@@ -67,12 +84,12 @@ export function GlobalTopBar({ userRole, onRoleChange }: GlobalTopBarProps) {
               <div className="flex items-center justify-between border-b border-white/10 pb-2">
                 <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
                   <Clock className="w-3.5 h-3.5 text-red-400" />
-                  Alertas de SLA Excedido ({mockSlaAlerts.length})
+                  Alertas de SLA Excedido ({slaAlerts.length})
                 </span>
                 <span className="text-[10px] text-muted-foreground">Tempo &gt; 15 min</span>
               </div>
               <div className="space-y-2">
-                {mockSlaAlerts.map((alert) => (
+                {slaAlerts.map((alert) => (
                   <div key={alert.id} className="p-2 bg-red-500/10 rounded-lg border border-red-500/20 text-xs space-y-0.5">
                     <div className="flex justify-between font-semibold text-foreground">
                       <span>{alert.leadName}</span>

@@ -13,8 +13,29 @@ import {
   Users,
   BarChart3
 } from "lucide-react";
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Legend } from "recharts";
 
 export default function DashboardExecutivoPage() {
+  // Dummy data for line chart (volume of leads over time)
+  const leadsOverTimeData = [
+    { day: "Segunda", leads: 120, conversao: 30 },
+    { day: "Terça", leads: 145, conversao: 45 },
+    { day: "Quarta", leads: 110, conversao: 25 },
+    { day: "Quinta", leads: 180, conversao: 60 },
+    { day: "Sexta", leads: 155, conversao: 50 },
+    { day: "Sábado", leads: 90, conversao: 20 },
+    { day: "Domingo", leads: 70, conversao: 15 },
+  ];
+
+  // Dummy data for bar chart (conversion rates by attendant)
+  const attendantConversionData = [
+    { name: "João", rate: 22, leads: 150 },
+    { name: "Maria", rate: 35, leads: 120 },
+    { name: "Carlos", rate: 18, leads: 180 },
+    { name: "Ana", rate: 28, leads: 140 },
+    { name: "Lucas", rate: 15, leads: 190 },
+  ];
+
   const kpis = [
     {
       title: "Faturamento Total Estimado",
@@ -116,6 +137,62 @@ export default function DashboardExecutivoPage() {
             </div>
           );
         })}
+      </div>
+
+      {/* Visual Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Line Chart */}
+        <div className="glass-card p-6 rounded-2xl border border-[oklch(0.3_0.02_260/0.4)] space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-base font-bold text-white flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-blue-400" />
+              Volume de Leads vs Conversões
+            </h2>
+          </div>
+          <div className="h-[250px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={leadsOverTimeData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" vertical={false} />
+                <XAxis dataKey="day" stroke="rgba(255,255,255,0.5)" fontSize={11} tickLine={false} axisLine={false} />
+                <YAxis stroke="rgba(255,255,255,0.5)" fontSize={11} tickLine={false} axisLine={false} />
+                <RechartsTooltip 
+                  contentStyle={{ backgroundColor: 'rgba(0,0,0,0.8)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px' }}
+                  itemStyle={{ color: '#fff', fontSize: '12px' }}
+                  labelStyle={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px', marginBottom: '4px' }}
+                />
+                <Legend iconType="circle" wrapperStyle={{ fontSize: '12px' }} />
+                <Line type="monotone" dataKey="leads" name="Leads Gerados" stroke="#3b82f6" strokeWidth={3} dot={{ r: 4, fill: '#3b82f6', strokeWidth: 0 }} activeDot={{ r: 6 }} />
+                <Line type="monotone" dataKey="conversao" name="Conversões" stroke="#10b981" strokeWidth={3} dot={{ r: 4, fill: '#10b981', strokeWidth: 0 }} activeDot={{ r: 6 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Bar Chart */}
+        <div className="glass-card p-6 rounded-2xl border border-[oklch(0.3_0.02_260/0.4)] space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-base font-bold text-white flex items-center gap-2">
+              <Users className="w-5 h-5 text-emerald-400" />
+              Taxa de Conversão por Atendente (%)
+            </h2>
+          </div>
+          <div className="h-[250px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={attendantConversionData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }} layout="horizontal">
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" vertical={false} />
+                <XAxis dataKey="name" stroke="rgba(255,255,255,0.5)" fontSize={11} tickLine={false} axisLine={false} />
+                <YAxis stroke="rgba(255,255,255,0.5)" fontSize={11} tickLine={false} axisLine={false} />
+                <RechartsTooltip 
+                  cursor={{ fill: 'rgba(255,255,255,0.05)' }}
+                  contentStyle={{ backgroundColor: 'rgba(0,0,0,0.8)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px' }}
+                  itemStyle={{ color: '#fff', fontSize: '12px' }}
+                  labelStyle={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px', marginBottom: '4px' }}
+                />
+                <Bar dataKey="rate" name="Taxa Conversão (%)" fill="#10b981" radius={[4, 4, 0, 0]} barSize={30} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
       </div>
 
       {/* Channel Media Performance */}

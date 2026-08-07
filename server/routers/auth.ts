@@ -33,6 +33,25 @@ export const authRouter = router({
         ctx.res.cookie(COOKIE_NAME, token, { ...cookieOptions, maxAge: 7 * 24 * 60 * 60 * 1000 });
         
         return { success: true, user } as const;
+      } else {
+        // Any other email login as normal Atendente
+        const namePart = input.email.split("@")[0] || "Atendente";
+        const user = {
+          id: `usr-atend-${Date.now()}`,
+          name: namePart,
+          email: input.email,
+          role: "user",
+          department: "Atendimento",
+          supervisorName: "Valeska Souza",
+          status: "ativo",
+          lastAccess: new Date().toISOString()
+        };
+
+        const token = jwt.sign(user, JWT_SECRET, { expiresIn: '7d' });
+        const cookieOptions = getSessionCookieOptions(ctx.req);
+        ctx.res.cookie(COOKIE_NAME, token, { ...cookieOptions, maxAge: 7 * 24 * 60 * 60 * 1000 });
+        
+        return { success: true, user } as const;
       }
       
       throw new Error("Credenciais inválidas");

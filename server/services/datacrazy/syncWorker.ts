@@ -183,8 +183,7 @@ export async function runSyncWorker() {
     updateDashboardStore(payload);
     setCache("dashboard", payload);
 
-    // Sync to Firestore in the background
-    syncToFirestore(leads, attendants, materializedMetrics, conversations, businesses).catch(console.error);
+    // syncToFirestore(leads, attendants, materializedMetrics, conversations, businesses).catch(console.error);
 
     console.log(`[Sync Worker] Success! Materialized ${leads.length} leads, ${conversations.length} conversations, ${businesses.length} deals in store.`);
   } catch (error: any) {

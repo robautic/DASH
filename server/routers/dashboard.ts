@@ -1,4 +1,4 @@
-import { publicProcedure, router } from "../_core/trpc";
+import { protectedProcedure, router } from "../_core/trpc";
 import { z } from "zod";
 import { getDashboardStore } from "../cache/store";
 import { runSyncWorker } from "../services/datacrazy/syncWorker";
@@ -8,13 +8,25 @@ import { fetchConversations } from "../services/datacrazy/conversations";
 import { fetchDepartments } from "../services/datacrazy/departments";
 
 export const dashboardRouter = router({
-  full: publicProcedure.query(async () => {
+  full: protectedProcedure.query(async ({ ctx }) => {
     try {
       const store = getDashboardStore();
       // If store hasn't synced yet, run worker in background and return store
       if (store.lastSyncTime === 0 && !store.isSyncing) {
         runSyncWorker().catch(console.error);
       }
+
+      // 3. Strict Permission Filtering
+      if (ctx.user && ctx.user.role !== "admin") {
+        const userName = ctx.user.name;
+        return {
+          ...store,
+          leads: store.leads?.filter((l: any) => l.atendente === userName || l.agent === userName || l.atendente === ctx.user.email),
+          businesses: store.businesses?.filter((b: any) => b.atendente === userName || b.agent === userName || b.owner === userName),
+          conversations: store.conversations?.filter((c: any) => c.atendente === userName || c.agent === userName)
+        };
+      }
+
       return store;
     } catch (error) {
       console.error("[DashboardRouter] Error fetching full data:", error);
@@ -22,7 +34,7 @@ export const dashboardRouter = router({
     }
   }),
 
-  departments: publicProcedure.query(async () => {
+  departments: protectedProcedure.query(async () => {
     try {
       const store = getDashboardStore();
       if (store.departments && store.departments.length > 0) return store.departments;
@@ -34,7 +46,7 @@ export const dashboardRouter = router({
     }
   }),
 
-  attendants: publicProcedure.query(async () => {
+  attendants: protectedProcedure.query(async () => {
     try {
       const store = getDashboardStore();
       if (store.attendants && store.attendants.length > 0) return store.attendants;
@@ -46,29 +58,45 @@ export const dashboardRouter = router({
     }
   }),
 
-  leads: publicProcedure
+  leads: protectedProcedure
     .input(
       z.object({
         skip: z.number().default(0),
         take: z.number().default(100),
       })
     )
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
       try {
         const store = getDashboardStore();
-        if (store.leads && store.leads.length > 0) {
-          const sliced = store.leads.slice(input.skip, input.skip + input.take);
-          return { count: store.leads.length, data: sliced };
+        
+        // Apply RBAC filtering
+        let allLeads = store.leads || [];
+        if (ctx.user && ctx.user.role !== "admin") {
+          const userName = ctx.user.name;
+          allLeads = allLeads.filter((l: any) => l.atendente === userName || l.agent === userName || l.atendente === ctx.user.email);
+        }
+
+        if (allLeads.length > 0) {
+          const sliced = allLeads.slice(input.skip, input.skip + input.take);
+          return { count: allLeads.length, data: sliced };
         }
         const result = await fetchLeads(input.skip, input.take);
-        return { count: result.count || result.data?.length || 0, data: result.data || [] };
+        
+        // Also filter fetch result if falling back
+        let fetchedLeads = result.data || [];
+        if (ctx.user && ctx.user.role !== "admin") {
+          const userName = ctx.user.name;
+          fetchedLeads = fetchedLeads.filter((l: any) => l.atendente === userName || l.agent === userName || l.atendente === ctx.user.email);
+        }
+
+        return { count: result.count || fetchedLeads.length || 0, data: fetchedLeads };
       } catch (error) {
         console.error("[DashboardRouter] Error fetching leads:", error);
         return { count: 0, data: [] };
       }
     }),
 
-  instances: publicProcedure.query(async () => {
+  instances: protectedProcedure.query(async () => {
     try {
       const store = getDashboardStore();
       if (store.instances && store.instances.length > 0) {
@@ -82,7 +110,7 @@ export const dashboardRouter = router({
     }
   }),
 
-  businesses: publicProcedure
+  businesses: protectedProcedure
     .input(
       z.object({
         skip: z.number().default(0),
@@ -109,7 +137,7 @@ export const dashboardRouter = router({
       }
     }),
 
-  pipelines: publicProcedure.query(async () => {
+  pipelines: protectedProcedure.query(async () => {
     try {
       const result = await fetchPipelines();
       return result.data || [];
@@ -119,7 +147,7 @@ export const dashboardRouter = router({
     }
   }),
 
-  pipelineStages: publicProcedure
+  pipelineStages: protectedProcedure
     .input(z.object({ pipelineId: z.string() }))
     .query(async ({ input }) => {
       try {
@@ -135,7 +163,7 @@ export const dashboardRouter = router({
       }
     }),
 
-  conversations: publicProcedure
+  conversations: protectedProcedure
     .input(
       z.object({
         skip: z.number().default(0),

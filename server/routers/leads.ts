@@ -14,14 +14,21 @@ export const leadsRouter = router({
         search: z.string().optional(),
       })
     )
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
       try {
         const filters: Record<string, string> = {};
         if (input.status) filters.status = input.status;
         if (input.search) filters.search = input.search;
 
         const result = await fetchLeads(input.skip, input.take, filters);
-        return { count: result.count || 0, data: result.data || [] };
+        
+        let fetchedLeads = result.data || [];
+        if (ctx.user && ctx.user.role !== "admin") {
+          const userName = ctx.user.name;
+          fetchedLeads = fetchedLeads.filter((l: any) => l.atendente === userName || l.agent === userName || l.atendente === ctx.user.email);
+        }
+
+        return { count: result.count || fetchedLeads.length || 0, data: fetchedLeads };
       } catch (error) {
         console.error("[LeadsRouter] Error listing leads:", error);
         return { count: 0, data: [] };

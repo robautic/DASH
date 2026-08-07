@@ -285,8 +285,8 @@ export default function LeadsTable({ leads, onSelectLead }: LeadsTableProps) {
                   <td className="py-3 px-3">
                     {isSlaDelayed ? (
                       <span className="flex items-center gap-1 text-[10px] text-red-400 font-semibold bg-red-500/10 px-2 py-0.5 rounded border border-red-500/20">
-                        <Clock className="w-3 h-3" />
-                        SLA Excedido
+                        <Clock className="w-3 h-3 animate-pulse" />
+                        {diffMinutes > 15 ? `Parado há ${Math.floor(diffMinutes)} min` : "SLA Excedido"}
                       </span>
                     ) : (
                       <span className="flex items-center gap-1 text-[10px] text-emerald-glow font-medium bg-emerald-glow/10 px-2 py-0.5 rounded border border-emerald-glow/20">
