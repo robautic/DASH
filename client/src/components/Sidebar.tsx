@@ -30,6 +30,8 @@ export default function Sidebar({ activeSection, onSectionChange }: SidebarProps
 
   const navItems = [
     { id: "overview", label: "Visão Geral", icon: LayoutDashboard },
+    { id: "supervisor", label: "Painel Supervisor", icon: TrendingUp },
+    { id: "atendente_dash", label: "Meu Painel Atendente", icon: UserIcon },
     { id: "atendentes", label: "Atendentes & Metas", icon: Users },
     { id: "leads", label: "Leads Profissionais", icon: MessageSquare },
     { id: "departamentos", label: "Departamentos", icon: Building2 },

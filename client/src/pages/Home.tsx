@@ -15,6 +15,8 @@ import PipelineView from "@/components/PipelineView";
 import LeadsTable from "@/components/LeadsTable";
 import DatasourceCards from "@/components/DatasourceCards";
 import LeadDetailModal from "@/components/LeadDetailModal";
+import { DashboardSupervisorView } from "@/components/dashboard/DashboardSupervisorView";
+import { DashboardAtendenteView } from "@/components/dashboard/DashboardAtendenteView";
 import { ConfiguracoesPage } from "@/pages/ConfiguracoesPage";
 import { FunilPage } from "@/pages/FunilPage";
 import { DepartamentosPage } from "@/pages/DepartamentosPage";
@@ -366,6 +368,24 @@ export default function Home({ params }: HomeProps) {
 
           {/* Section: Atendentes & Metas */}
           {activeSection === "atendentes" && <AgentsAdvancedView attendants={attendants} />}
+
+          {/* Section: Painel Supervisor */}
+          {activeSection === "supervisor" && (
+            <DashboardSupervisorView
+              attendants={attendants}
+              leads={leads}
+              departmentName={currentUser?.department || "Comercial"}
+            />
+          )}
+
+          {/* Section: Meu Painel Atendente */}
+          {activeSection === "atendente_dash" && (
+            <DashboardAtendenteView
+              attendantName={currentUser?.name || "Atendente"}
+              leads={rawLeads}
+              onSelectLead={setSelectedLead}
+            />
+          )}
 
           {/* Section: Leads Profissionais */}
           {activeSection === "leads" && (
