@@ -9,7 +9,15 @@ import Home from "./pages/Home";
 import LoginPage from "./pages/LoginPage";
 
 function Router() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-[oklch(0.08_0.02_260)] text-emerald-glow">
+        <div className="w-8 h-8 border-2 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin"></div>
+      </div>
+    );
+  }
 
   if (!isAuthenticated) {
     return <LoginPage />;

@@ -1,6 +1,10 @@
+import { useState } from "react";
 import { cn } from "@/lib/utils";
 import type { DashboardLead } from "@/lib/datacrazy-types";
-import { X, User, Phone, GitBranch, Clock, MessageSquare, ShieldAlert, CheckCircle2 } from "lucide-react";
+import { X, User, Phone, GitBranch, Clock, MessageSquare, ShieldAlert, CheckCircle2, Save } from "lucide-react";
+import { useUpdateLead } from "@/hooks/useLeads";
+import { trpc } from "@/lib/trpc";
+import { toast } from "sonner";
 
 interface LeadDetailModalProps {
   lead: DashboardLead | null;
@@ -15,6 +19,30 @@ const statusConfig: Record<string, { label: string; color: string }> = {
 };
 
 export default function LeadDetailModal({ lead, onClose }: LeadDetailModalProps) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [selectedAtendente, setSelectedAtendente] = useState(lead?.atendente || "");
+  const [selectedStatus, setSelectedStatus] = useState(lead?.status || "in_process");
+  const [selectedEtapa, setSelectedEtapa] = useState(lead?.etapa || "");
+
+  const updateLeadMutation = useUpdateLead();
+  const attendantsQuery = trpc.dashboard.attendants.useQuery();
+
+  const handleSave = async () => {
+    try {
+      await updateLeadMutation.mutateAsync({
+        id: lead!.id,
+        atendente: selectedAtendente,
+        status: selectedStatus,
+        etapa: selectedEtapa,
+      });
+      toast.success("Lead atualizado com sucesso");
+      setIsEditing(false);
+      onClose(); // Optional: close modal on save
+    } catch (error) {
+      toast.error("Erro ao atualizar lead");
+    }
+  };
+
   if (!lead) return null;
 
   const cfg = statusConfig[lead.status] || statusConfig.default;
@@ -189,7 +217,6 @@ export default function LeadDetailModal({ lead, onClose }: LeadDetailModalProps)
               <Clock className="w-3.5 h-3.5 text-emerald-glow" />
               Timeline do Lead (Histórico de Interações)
             </h4>
-
             <div className="space-y-3 relative pl-4 border-l border-[oklch(0.3_0.02_260/0.4)]">
               {mockTimelineEvents.map((evt) => {
                 const IconComponent = evt.icon;
@@ -214,12 +241,62 @@ export default function LeadDetailModal({ lead, onClose }: LeadDetailModalProps)
             </div>
           </div>
 
-          {/* Current Stage */}
-          <div className="pt-4 border-t border-[oklch(0.3_0.02_260/0.3)] flex items-center justify-between">
-            <span className="text-xs text-muted-foreground">Etapa atual no Pipeline</span>
-            <span className="text-xs font-bold text-emerald-glow px-2.5 py-1 rounded bg-emerald-glow/10 border border-emerald-glow/20">
-              {lead.etapa}
-            </span>
+          {/* Quick Actions (Update Lead) */}
+          <div className="pt-4 border-t border-[oklch(0.3_0.02_260/0.3)] space-y-3">
+            <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+              <GitBranch className="w-3.5 h-3.5 text-emerald-glow" />
+              Ações Rápidas (Atualizar Lead)
+            </h4>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <label className="text-[11px] text-muted-foreground font-medium">Status do Lead</label>
+                <select
+                  value={selectedStatus}
+                  onChange={(e) => setSelectedStatus(e.target.value)}
+                  className="w-full bg-[oklch(0.12_0.02_260)] border border-[oklch(0.3_0.02_260/0.4)] rounded-lg px-3 py-2 text-xs text-foreground focus:outline-none focus:border-emerald-glow/50"
+                >
+                  <option value="in_process">Em Processo</option>
+                  <option value="won">Ganho</option>
+                  <option value="lost">Perdido</option>
+                </select>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[11px] text-muted-foreground font-medium">Atendente Responsável</label>
+                <select
+                  value={selectedAtendente}
+                  onChange={(e) => setSelectedAtendente(e.target.value)}
+                  className="w-full bg-[oklch(0.12_0.02_260)] border border-[oklch(0.3_0.02_260/0.4)] rounded-lg px-3 py-2 text-xs text-foreground focus:outline-none focus:border-emerald-glow/50"
+                >
+                  <option value="">Selecione um atendente...</option>
+                  {attendantsQuery.data?.map((att: any) => (
+                    <option key={att.id} value={att.name || att.email}>{att.name || att.email}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-1 sm:col-span-2">
+                <label className="text-[11px] text-muted-foreground font-medium">Etapa do Funil</label>
+                <input
+                  type="text"
+                  value={selectedEtapa}
+                  onChange={(e) => setSelectedEtapa(e.target.value)}
+                  placeholder="Ex: Novo Contato, Em Negociação..."
+                  className="w-full bg-[oklch(0.12_0.02_260)] border border-[oklch(0.3_0.02_260/0.4)] rounded-lg px-3 py-2 text-xs text-foreground focus:outline-none focus:border-emerald-glow/50"
+                />
+              </div>
+            </div>
+
+            <div className="pt-2 flex justify-end">
+              <button
+                onClick={handleSave}
+                disabled={updateLeadMutation.isPending}
+                className="flex items-center gap-2 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 px-4 py-2 rounded-lg text-xs font-semibold transition-colors disabled:opacity-50"
+              >
+                {updateLeadMutation.isPending ? "Salvando..." : <><Save className="w-3.5 h-3.5" /> Salvar Alterações</>}
+              </button>
+            </div>
           </div>
         </div>
       </div>

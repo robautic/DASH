@@ -64,6 +64,26 @@ export async function fetchLeadById(id: string) {
   }
 }
 
+export async function updateLead(id: string, payload: any) {
+  try {
+    const { data } = await dataCrazyClient.put(`/api/v1/leads/${id}`, payload);
+    return data;
+  } catch (error: any) {
+    console.warn(`[Leads] updateLead error for ${id}:`, error?.message || error);
+    throw error;
+  }
+}
+
+export async function updateBusiness(id: string, payload: any) {
+  try {
+    const { data } = await dataCrazyClient.put(`/api/v1/businesses/${id}`, payload);
+    return data;
+  } catch (error: any) {
+    console.warn(`[Businesses] updateBusiness error for ${id}:`, error?.message || error);
+    throw error;
+  }
+}
+
 export async function fetchBusinesses(skip = 0, take = 100, filters?: Record<string, string>) {
   try {
     const params: Record<string, any> = { skip, take };

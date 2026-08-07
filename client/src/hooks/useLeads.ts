@@ -31,3 +31,15 @@ export function useLeadDetail(id?: string) {
     isLoading: query.isLoading,
   };
 }
+
+export function useUpdateLead() {
+  const utils = trpc.useUtils();
+  return trpc.leads.update.useMutation({
+    onSuccess: () => {
+      utils.leads.list.invalidate();
+      utils.dashboard.full.invalidate();
+      utils.dashboard.leads.invalidate();
+      utils.leads.getById.invalidate();
+    },
+  });
+}

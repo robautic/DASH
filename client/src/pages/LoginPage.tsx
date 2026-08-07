@@ -18,39 +18,35 @@ export default function LoginPage({ onSuccess }: LoginPageProps) {
   const [forgotEmail, setForgotEmail] = useState("");
   const [forgotLoading, setForgotLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
       toast.error("Por favor, preencha todos os campos.");
       return;
     }
     setLoading(true);
-    setTimeout(() => {
-      const ok = login(email, password, remember);
-      setLoading(false);
-      if (ok) {
-        toast.success("Login realizado com sucesso!");
-        if (onSuccess) onSuccess();
-      } else {
-        toast.error("E-mail ou senha incorretos.");
-      }
-    }, 400);
+    const ok = await login(email, password, remember);
+    setLoading(false);
+    if (ok) {
+      toast.success("Login realizado com sucesso!");
+      if (onSuccess) onSuccess();
+    } else {
+      toast.error("E-mail ou senha incorretos.");
+    }
   };
 
-  const handleQuickDemoLogin = (demoEmail: string, demoRoleLabel: string) => {
+  const handleQuickDemoLogin = async (demoEmail: string, demoRoleLabel: string) => {
     setEmail(demoEmail);
     setPassword("123456");
     setLoading(true);
-    setTimeout(() => {
-      const ok = login(demoEmail, "123456", true);
-      setLoading(false);
-      if (ok) {
-        toast.success(`Conectado como ${demoRoleLabel}!`);
-        if (onSuccess) onSuccess();
-      } else {
-        toast.error("Erro ao realizar login de demonstração.");
-      }
-    }, 300);
+    const ok = await login(demoEmail, "123456", true);
+    setLoading(false);
+    if (ok) {
+      toast.success(`Conectado como ${demoRoleLabel}!`);
+      if (onSuccess) onSuccess();
+    } else {
+      toast.error("Erro ao realizar login de demonstração.");
+    }
   };
 
   const handleSendResetLink = async (e: React.FormEvent) => {
