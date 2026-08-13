@@ -1,0 +1,120 @@
+rules_version = '2';
+
+// Terceira camada de autorização (a primeira é o React, a segunda é o
+// backend em server/middleware/auth.ts). Na prática, o backend usa o Admin
+// SDK, que ignora estas regras — elas valem pra qualquer acesso direto via
+// SDK cliente (defesa em profundidade caso isso passe a existir no futuro).
+//
+// Modelo (ver server/src/types/firestore.ts):
+//  users/{uid}.role        -> ADMIN | SUPERVISOR | ATTENDANT | VIEWER
+//  users/{uid}.departmentIds -> departamentos do SUPERVISOR
+//  users/{uid}.attendantId   -> liga o usuário ao attendantId do DataCrazy (ATTENDANT)
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function userDoc() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function role() {
+      return isSignedIn() ? userDoc().role : null;
+    }
+
+    function isAdmin() {
+      return role() == 'ADMIN';
+    }
+
+    function isViewer() {
+      return role() == 'VIEWER';
+    }
+
+    function isSupervisorOfDept(deptId) {
+      return role() == 'SUPERVISOR' && deptId != null && deptId in userDoc().departmentIds;
+    }
+
+    function isOwnAttendant(attendantId) {
+      return role() == 'ATTENDANT' && attendantId != null && attendantId == userDoc().attendantId;
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    // Cada usuário só lê o próprio perfil; escrita fica restrita ao ADMIN.
+    match /users/{uid} {
+      allow read: if isAdmin() || isOwner(uid);
+      allow write: if isAdmin();
+    }
+
+    // Leads: ADMIN vê tudo; SUPERVISOR vê o departamento dele; ATTENDANT vê
+    // só os próprios; VIEWER só lê tudo. Escrita direta sempre passa pelo
+    // backend (Fase 4) — aqui só ADMIN escreve, o resto é defesa em profundidade.
+    match /leads/{leadId} {
+      allow read: if isAdmin() || isViewer()
+        || isSupervisorOfDept(resource.data.departmentId)
+        || isOwnAttendant(resource.data.attendantId);
+      allow write: if isAdmin();
+    }
+
+    match /conversations/{conversationId} {
+      allow read: if isAdmin() || isViewer()
+        || isSupervisorOfDept(resource.data.departmentId)
+        || (role() == 'ATTENDANT' && userDoc().attendantId in resource.data.attendantIds);
+      allow write: if isAdmin();
+    }
+
+    match /messages/{messageId} {
+      allow read: if isAdmin() || isViewer()
+        || isOwnAttendant(get(/databases/$(database)/documents/leads/$(resource.data.leadId)).data.attendantId);
+      allow write: if isAdmin();
+    }
+
+    match /conversions/{conversionId} {
+      allow read: if isAdmin() || isViewer()
+        || isSupervisorOfDept(resource.data.departmentId)
+        || isOwnAttendant(resource.data.attendantId);
+      allow write: if isAdmin();
+    }
+
+    match /leadHistory/{entryId} {
+      allow read: if isAdmin() || isViewer()
+        || isOwnAttendant(get(/databases/$(database)/documents/leads/$(resource.data.leadId)).data.attendantId);
+      allow write: if isAdmin();
+    }
+
+    // Dados de referência (atendentes, departamentos, campanhas, pipelines,
+    // stages, tags, metas, métricas): leitura ampla pra qualquer usuário
+    // autenticado, escrita só pelo ADMIN/backend.
+    match /attendants/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
+    match /departments/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
+    match /campaigns/{id} { allow read: if isAdmin() || isViewer() || role() == 'SUPERVISOR'; allow write: if isAdmin(); }
+    match /pipelines/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
+    match /stages/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
+    match /tags/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
+
+    match /goals/{id} {
+      allow read: if isAdmin() || isViewer()
+        || isSupervisorOfDept(resource.data.departmentId)
+        || isOwnAttendant(resource.data.attendantId);
+      allow write: if isAdmin();
+    }
+
+    match /metrics/{id} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // syncState e auditLogs: só ADMIN, ponto — não é dado operacional.
+    match /syncState/{id} { allow read, write: if isAdmin(); }
+    match /auditLogs/{id} { allow read, write: if isAdmin(); }
+    match /settings/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
+
+    // Nunca "allow all" implícito: qualquer coleção nova precisa de uma
+    // regra explícita acima antes de ser exposta.
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "indexes": [
+    { "collectionGroup": "leads", "queryScope": "COLLECTION", "fields": [
+      { "fieldPath": "attendantId", "order": "ASCENDING" },
+      { "fieldPath": "createdAt", "order": "DESCENDING" }
+    ]},
+    { "collectionGroup": "leads", "queryScope": "COLLECTION", "fields": [
+      { "fieldPath": "departmentId", "order": "ASCENDING" },
+      { "fieldPath": "createdAt", "order": "DESCENDING" }
+    ]},
+    { "collectionGroup": "leads", "queryScope": "COLLECTION", "fields": [
+      { "fieldPath": "conversionStatus", "order": "ASCENDING" },
+      { "fieldPath": "createdAt", "order": "DESCENDING" }
+    ]},
+    { "collectionGroup": "leads", "queryScope": "COLLECTION", "fields": [
+      { "fieldPath": "campaignId", "order": "ASCENDING" },
+      { "fieldPath": "createdAt", "order": "DESCENDING" }
+    ]},
+    { "collectionGroup": "conversions", "queryScope": "COLLECTION", "fields": [
+      { "fieldPath": "attendantId", "order": "ASCENDING" },
+      { "fieldPath": "convertedAt", "order": "DESCENDING" }
+    ]},
+    { "collectionGroup": "conversions", "queryScope": "COLLECTION", "fields": [
+      { "fieldPath": "departmentId", "order": "ASCENDING" },
+      { "fieldPath": "convertedAt", "order": "DESCENDING" }
+    ]},
+    { "collectionGroup": "conversions", "queryScope": "COLLECTION", "fields": [
+      { "fieldPath": "campaignId", "order": "ASCENDING" },
+      { "fieldPath": "convertedAt", "order": "DESCENDING" }
+    ]},
+    { "collectionGroup": "leadHistory", "queryScope": "COLLECTION", "fields": [
+      { "fieldPath": "leadId", "order": "ASCENDING" },
+      { "fieldPath": "createdAt", "order": "DESCENDING" }
+    ]},
+    { "collectionGroup": "messages", "queryScope": "COLLECTION", "fields": [
+      { "fieldPath": "conversationId", "order": "ASCENDING" },
+      { "fieldPath": "createdAt", "order": "DESCENDING" }
+    ]},
+    { "collectionGroup": "stages", "queryScope": "COLLECTION", "fields": [
+      { "fieldPath": "pipelineId", "order": "ASCENDING" },
+      { "fieldPath": "index", "order": "ASCENDING" }
+    ]},
+    { "collectionGroup": "metrics", "queryScope": "COLLECTION", "fields": [
+      { "fieldPath": "scope", "order": "ASCENDING" },
+      { "fieldPath": "date", "order": "DESCENDING" }
+    ]}
+  ],
+  "fieldOverrides": []
+}
