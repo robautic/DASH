@@ -11,19 +11,95 @@ type Stage={pipeline_id:string;pipeline_name:string;stage_id:string;stage_name:s
 type Tag={tag_id:string;tag_name:string;tag_color:string;usage_count:number}
 
 export function SettingsManager({tenantId,userId,settings,members,invitations,pipeline,tags,permissions}:{tenantId:string;userId:string;settings:Settings;members:Member[];invitations:Invitation[];pipeline:Stage[];tags:Tag[];permissions:Record<string,boolean>}){
-  const router=useRouter(); const [tab,setTab]=useState('geral'); const [message,setMessage]=useState(''); const [error,setError]=useState('')
+  const router=useRouter()
+  const [tab,setTab]=useState('geral')
+  const [message,setMessage]=useState('')
+  const [error,setError]=useState('')
   const supabase=createClient()
-  function ok(text:string){setMessage(text);setError('');router.refresh()} function fail(text:string){setError(text);setMessage('')}
 
-  async function saveGeneral(e:FormEvent<HTMLFormElement>){e.preventDefault();const f=new FormData(e.currentTarget);const {error}=await supabase.rpc('update_workspace_settings',{p_tenant_id:tenantId,p_name:String(f.get('name')),p_slug:String(f.get('slug')),p_timezone:String(f.get('timezone')),p_currency:String(f.get('currency')),p_locale:String(f.get('locale'))});error?fail(error.message):ok('Workspace atualizado.')}
-  async function invite(e:FormEvent<HTMLFormElement>){e.preventDefault();const f=new FormData(e.currentTarget);const {error}=await supabase.functions.invoke('workspace-invite',{body:{tenant_id:tenantId,email:String(f.get('email')),role:String(f.get('role'))}});error?fail(error.message):ok('Convite processado.')}
-  async function role(user:string,roleValue:Member['role']){const {error}=await supabase.rpc('update_workspace_member_role',{p_tenant_id:tenantId,p_user_id:user,p_role:roleValue});error?fail(error.message):ok('Permissão atualizada.')}
-  async function remove(user:string){if(!confirm('Remover este membro do workspace?'))return;const {error}=await supabase.rpc('remove_workspace_member',{p_tenant_id:tenantId,p_user_id:user});error?fail(error.message):ok('Membro removido.')}
-  async function revoke(id:string){const {error}=await supabase.rpc('revoke_workspace_invitation',{p_tenant_id:tenantId,p_invitation_id:id});error?fail(error.message):ok('Convite revogado.')}
-  async function addStage(e:FormEvent<HTMLFormElement>){e.preventDefault();const f=new FormData(e.currentTarget);const pipelineId=pipeline[0]?.pipeline_id;if(!pipelineId)return;const {error}=await supabase.rpc('create_pipeline_stage',{p_tenant_id:tenantId,p_pipeline_id:pipelineId,p_name:String(f.get('name')),p_color:String(f.get('color')||'#64748B'),p_is_won:false,p_is_lost:false});error?fail(error.message):ok('Etapa criada.')}
-  async function deleteStage(id:string){if(!confirm('Excluir esta etapa?'))return;const {error}=await supabase.rpc('delete_pipeline_stage',{p_tenant_id:tenantId,p_stage_id:id});error?fail(error.message):ok('Etapa excluída.')}
-  async function createTag(e:FormEvent<HTMLFormElement>){e.preventDefault();const f=new FormData(e.currentTarget);const {error}=await supabase.rpc('create_tag',{p_tenant_id:tenantId,p_name:String(f.get('name')),p_color:String(f.get('color')||'#64748B')});error?fail(error.message):ok('Tag criada.')}
-  async function deleteTag(id:string){const {error}=await supabase.rpc('delete_tag',{p_tenant_id:tenantId,p_tag_id:id});error?fail(error.message):ok('Tag removida.')}
+  function ok(text:string){
+    setMessage(text)
+    setError('')
+    router.refresh()
+  }
+
+  function fail(text:string){
+    setError(text)
+    setMessage('')
+  }
+
+  async function saveGeneral(e:FormEvent<HTMLFormElement>){
+    e.preventDefault()
+    const f=new FormData(e.currentTarget)
+    const {error}=await supabase.rpc('update_workspace_settings',{
+      p_tenant_id:tenantId,
+      p_name:String(f.get('name')),
+      p_slug:String(f.get('slug')),
+      p_timezone:String(f.get('timezone')),
+      p_currency:String(f.get('currency')),
+      p_locale:String(f.get('locale')),
+    })
+    if(error) fail(error.message)
+    else ok('Workspace atualizado.')
+  }
+
+  async function invite(e:FormEvent<HTMLFormElement>){
+    e.preventDefault()
+    const f=new FormData(e.currentTarget)
+    const {error}=await supabase.functions.invoke('workspace-invite',{body:{tenant_id:tenantId,email:String(f.get('email')),role:String(f.get('role'))}})
+    if(error) fail(error.message)
+    else ok('Convite processado.')
+  }
+
+  async function role(user:string,roleValue:Member['role']){
+    const {error}=await supabase.rpc('update_workspace_member_role',{p_tenant_id:tenantId,p_user_id:user,p_role:roleValue})
+    if(error) fail(error.message)
+    else ok('Permissão atualizada.')
+  }
+
+  async function remove(user:string){
+    if(!confirm('Remover este membro do workspace?')) return
+    const {error}=await supabase.rpc('remove_workspace_member',{p_tenant_id:tenantId,p_user_id:user})
+    if(error) fail(error.message)
+    else ok('Membro removido.')
+  }
+
+  async function revoke(id:string){
+    const {error}=await supabase.rpc('revoke_workspace_invitation',{p_tenant_id:tenantId,p_invitation_id:id})
+    if(error) fail(error.message)
+    else ok('Convite revogado.')
+  }
+
+  async function addStage(e:FormEvent<HTMLFormElement>){
+    e.preventDefault()
+    const f=new FormData(e.currentTarget)
+    const pipelineId=pipeline[0]?.pipeline_id
+    if(!pipelineId) return
+    const {error}=await supabase.rpc('create_pipeline_stage',{p_tenant_id:tenantId,p_pipeline_id:pipelineId,p_name:String(f.get('name')),p_color:String(f.get('color')||'#64748B'),p_is_won:false,p_is_lost:false})
+    if(error) fail(error.message)
+    else ok('Etapa criada.')
+  }
+
+  async function deleteStage(id:string){
+    if(!confirm('Excluir esta etapa?')) return
+    const {error}=await supabase.rpc('delete_pipeline_stage',{p_tenant_id:tenantId,p_stage_id:id})
+    if(error) fail(error.message)
+    else ok('Etapa excluída.')
+  }
+
+  async function createTag(e:FormEvent<HTMLFormElement>){
+    e.preventDefault()
+    const f=new FormData(e.currentTarget)
+    const {error}=await supabase.rpc('create_tag',{p_tenant_id:tenantId,p_name:String(f.get('name')),p_color:String(f.get('color')||'#64748B')})
+    if(error) fail(error.message)
+    else ok('Tag criada.')
+  }
+
+  async function deleteTag(id:string){
+    const {error}=await supabase.rpc('delete_tag',{p_tenant_id:tenantId,p_tag_id:id})
+    if(error) fail(error.message)
+    else ok('Tag removida.')
+  }
 
   return <div className="settings-grid"><aside className="card settings-nav">{[['geral','Geral'],['equipe','Equipe'],['pipeline','Pipeline'],['tags','Tags']].map(([id,label])=><button key={id} className={tab===id?'active':''} onClick={()=>setTab(id)}>{label}</button>)}</aside><section className="card settings-content">{error&&<div className="error-box">{error}</div>}{message&&<div className="success-box">{message}</div>}{tab==='geral'&&<div className="settings-section"><h2>Workspace</h2><form onSubmit={saveGeneral}><div className="form-grid"><div className="field"><label>Nome</label><input className="input" name="name" defaultValue={settings.workspace_name}/></div><div className="field"><label>Slug</label><input className="input" name="slug" defaultValue={settings.workspace_slug}/></div><div className="field"><label>Fuso horário</label><input className="input" name="timezone" defaultValue={settings.timezone||'America/Sao_Paulo'}/></div><div className="field"><label>Moeda</label><input className="input" name="currency" defaultValue={settings.currency||'BRL'} maxLength={3}/></div><div className="field"><label>Locale</label><input className="input" name="locale" defaultValue={settings.locale||'pt-BR'}/></div></div><button className="btn btn-primary">Salvar alterações</button></form></div>}{tab==='equipe'&&<div className="settings-section"><h2>Equipe</h2>{permissions.manage_team&&<form onSubmit={invite} style={{display:'flex',gap:8,marginBottom:18,flexWrap:'wrap'}}><input className="input" style={{width:'auto',flex:'1 1 240px'}} name="email" type="email" placeholder="pessoa@empresa.com" required/><select className="select" style={{width:'auto'}} name="role"><option value="member">Membro</option><option value="viewer">Visualizador</option>{permissions.invite_admins&&<option value="admin">Admin</option>}</select><button className="btn btn-primary">Convidar</button></form>}<div className="member-list">{members.map(m=><div className="member-row" key={m.user_id}><div><strong>{m.display_name||m.email}{m.user_id===userId?' (você)':''}</strong><small>{m.email}</small></div><div className="row-actions">{permissions.manage_team?<select className="select compact" value={m.role} onChange={e=>void role(m.user_id,e.target.value as Member['role'])} disabled={m.role==='owner'&&!permissions.manage_owners}><option value="viewer">Viewer</option><option value="member">Member</option><option value="admin">Admin</option>{permissions.manage_owners&&<option value="owner">Owner</option>}</select>:<span>{m.role}</span>}{permissions.manage_team&&!m.is_current_user&&<button className="btn btn-danger" onClick={()=>void remove(m.user_id)}>Remover</button>}</div></div>)}</div>{invitations.some(i=>i.status==='pending')&&<><h3>Convites pendentes</h3><div className="member-list">{invitations.filter(i=>i.status==='pending').map(i=><div className="member-row" key={i.invitation_id}><div><strong>{i.email}</strong><small>{i.role}</small></div>{permissions.manage_team&&<button className="btn btn-danger" onClick={()=>void revoke(i.invitation_id)}>Revogar</button>}</div>)}</div></>}</div>}{tab==='pipeline'&&<div className="settings-section"><h2>{pipeline[0]?.pipeline_name||'Pipeline'}</h2><div className="member-list">{pipeline.map(s=><div className="member-row" key={s.stage_id}><div><strong><span className="stage-dot" style={{background:s.stage_color||'#64748B',marginRight:7}}/>{s.stage_name}</strong><small>{s.item_count} cards {s.is_won?'· etapa de venda':''}{s.is_lost?'· etapa de perda':''}</small></div>{permissions.configure_pipeline&&!s.is_won&&<button className="btn btn-danger" onClick={()=>void deleteStage(s.stage_id)}>Excluir</button>}</div>)}</div>{permissions.configure_pipeline&&<form onSubmit={addStage} style={{display:'flex',gap:8,marginTop:14}}><input className="input" name="name" placeholder="Nova etapa" required/><input className="input" name="color" type="color" defaultValue="#64748B" style={{width:60,padding:5}}/><button className="btn btn-primary">Adicionar</button></form>}</div>}{tab==='tags'&&<div className="settings-section"><h2>Tags das conversas</h2><div className="member-list">{tags.map(t=><div className="member-row" key={t.tag_id}><div><strong><span className="stage-dot" style={{background:t.tag_color,marginRight:7}}/>{t.tag_name}</strong><small>{t.usage_count} conversas</small></div><button className="btn btn-danger" onClick={()=>void deleteTag(t.tag_id)}>Excluir</button></div>)}</div><form onSubmit={createTag} style={{display:'flex',gap:8,marginTop:14}}><input className="input" name="name" placeholder="Nova tag" required/><input className="input" name="color" type="color" defaultValue="#6558E8" style={{width:60,padding:5}}/><button className="btn btn-primary">Criar tag</button></form></div>}</section></div>
 }
