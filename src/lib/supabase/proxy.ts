@@ -6,6 +6,10 @@ const supabasePublishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY 
 
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request })
+  const path = request.nextUrl.pathname
+  const isPublic = path === '/' || ['/login', '/cadastro', '/recuperar-senha'].some((route) => path.startsWith(route)) || path.startsWith('/auth/')
+
+  if (isPublic) return response
 
   const supabase = createServerClient(
     supabaseUrl,
@@ -26,21 +30,18 @@ export async function updateSession(request: NextRequest) {
     },
   )
 
-  const { data: { user } } = await supabase.auth.getUser()
-  const path = request.nextUrl.pathname
-  const isAuthRoute = ['/login', '/cadastro', '/recuperar-senha'].some((route) => path.startsWith(route))
-  const isPublic = isAuthRoute || path.startsWith('/auth/')
-
-  if (!user && !isPublic) {
+  try {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/login'
+      url.searchParams.set('next', path)
+      return NextResponse.redirect(url)
+    }
+  } catch {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     url.searchParams.set('next', path)
-    return NextResponse.redirect(url)
-  }
-
-  if (user && isAuthRoute) {
-    const url = request.nextUrl.clone()
-    url.pathname = '/dashboard'
     return NextResponse.redirect(url)
   }
 
