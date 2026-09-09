@@ -1,10 +1,10 @@
-node_modules/
-dist/
-build/
+node_modules
+.next
+out
+.vercel
 .env
 .env.local
-*.local
+.env.*.local
+*.log
 .DS_Store
-*.tsbuildinfo
-firebase-debug.log
-.firebase/
+coverage
