@@ -1,71 +1,88 @@
 # Dash e Pipe
 
-**Transforme seu WhatsApp em uma operação organizada, com Pipeline e Dashboard.**
-
-Dash e Pipe não é um CRM tradicional. A experiência é centrada no fluxo **Conectar → Visualizar → Organizar → Acompanhar → Analisar**.
+SaaS para transformar o WhatsApp em uma operação organizada com **Conversas, Pipeline e Dashboard**.
 
 ## Stack
 
-- Next.js 16 + React 19 + TypeScript
-- Supabase Auth + PostgreSQL + RLS
+- Next.js 16 + React 19
+- Supabase Auth + SSR
+- Postgres/RLS/RPCs
 - Supabase Realtime
 - Supabase Edge Functions
-- Supabase Vault
 - WhatsApp Cloud API
-- Deploy recomendado: Vercel
+- Vercel
 
-## Áreas
+## Produto
 
-- Dashboard com KPIs, série diária e filtros
-- Pipeline Kanban com drag-and-drop
-- Conversas com mensagens em tempo real, tags e responsáveis
-- Conexões WhatsApp
-- Configurações de workspace, equipe, pipeline e tags
-- Onboarding e autenticação
+Fluxo principal: **Conectar → Visualizar → Organizar → Acompanhar → Analisar**.
 
-## Rodar localmente
+Áreas do app:
 
-```bash
-cp .env.example .env.local
-npm install
-npm run dev
-```
+- Dashboard
+- Pipeline
+- Conversas
+- Conexões
+- Configurações
 
-Acesse `http://localhost:3000`.
+O visual premium usa tema grafite com destaque lime, inspirado em dashboards SaaS modernos sem copiar uma interface específica.
 
-## Variáveis
+## WhatsApp Business
 
-O frontend usa apenas a URL pública do projeto e a **publishable key**. Não coloque service role, secret key ou tokens da Meta no browser.
+Há dois modos de conexão:
+
+1. **Embedded Signup da Meta** — recomendado. O frontend abre o SDK da Meta e envia apenas o código temporário e os IDs retornados para a Edge Function `whatsapp-embedded-signup`.
+2. **Configuração avançada manual** — fallback para administradores, usando a Edge Function `whatsapp-configure`.
+
+O token final nunca é persistido no navegador; ele é armazenado no Vault pelo backend.
+
+### Variáveis públicas do frontend
 
 ```env
-NEXT_PUBLIC_SUPABASE_URL=https://ikgzyoltuiiwkrnjznml.supabase.co
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=...
-NEXT_PUBLIC_APP_URL=http://localhost:3000
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
+NEXT_PUBLIC_APP_URL=
+NEXT_PUBLIC_META_APP_ID=
+NEXT_PUBLIC_META_CONFIG_ID=
 ```
 
-Secrets do WhatsApp ficam nas Edge Functions/Vault do Supabase.
+### Secrets da Edge Function
 
-## Backend Supabase já esperado
+Configure no Supabase Dashboard:
 
-O app utiliza RPCs existentes como `get_app_bootstrap`, `get_dashboard_summary_filtered`, `get_dashboard_daily_series_filtered`, `get_pipeline_board_filtered`, `list_conversations_filtered`, `get_conversation_messages`, `move_pipeline_item`, `assign_conversation`, `set_conversation_tags`, `get_connection_health`, `get_workspace_settings`, `get_workspace_members` e demais funções de configuração.
+```text
+META_APP_ID
+META_APP_SECRET
+WHATSAPP_GRAPH_API_VERSION=v25.0
+```
 
-Também utiliza as Edge Functions `whatsapp-configure`, `whatsapp-send` e `workspace-invite`.
+Também é necessário liberar a URL pública do app em **Supabase Auth → URL Configuration** e configurar o aplicativo Meta/Embedded Signup.
 
-## Deploy na Vercel
+## Extensão Chrome / Edge
 
-1. Importe este repositório na Vercel.
-2. Configure `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`.
-3. Defina `NEXT_PUBLIC_APP_URL` com a URL final.
-4. No Supabase Auth, adicione a URL da Vercel às Redirect URLs.
-5. Faça o deploy.
+O diretório [`extension/`](./extension) contém o MVP da extensão companion.
+
+Ela:
+
+- aparece no WhatsApp Web;
+- tenta identificar o nome/telefone do chat aberto sem automatizar envio de mensagens;
+- abre o Dash e Pipe em `Conversas` já com a busca preenchida;
+- usa o Side Panel do navegador;
+- permite configurar a URL do ambiente do Dash e Pipe.
+
+Para testar localmente, abra `chrome://extensions`, habilite o modo de desenvolvedor e use **Carregar sem compactação** apontando para a pasta `extension`.
 
 ## Segurança
 
-- RLS é a fonte de autorização do banco.
-- Flags de permissão do frontend servem apenas para UX.
-- Tokens WhatsApp nunca devem ir para variáveis `NEXT_PUBLIC_*`.
-- O access token digitado na tela de Conexões é enviado para uma Edge Function autenticada e deve ser armazenado pelo backend no Vault.
+- RLS é a fonte de verdade para isolamento multi-tenant.
+- `service_role`, App Secret da Meta e tokens de WhatsApp não devem usar prefixo `NEXT_PUBLIC_`.
+- Estado de leitura interno de cada atendente é separado do status de entrega/leitura do provedor WhatsApp.
 
-## Branch de implementação
+## Desenvolvimento
 
-A reconstrução atual está em `dash-e-pipe` para preservar o projeto legado existente em `main`.
+```bash
+npm install
+npm run typecheck
+npm run lint
+npm run build
+npm run dev
+```
