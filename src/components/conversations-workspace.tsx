@@ -17,25 +17,42 @@ export function ConversationsWorkspace({ tenantId, initial, members, availableTa
   const [items, setItems] = useState(initial)
   const [selectedId, setSelectedId] = useState(initial[0]?.conversation_id || '')
   const [messages, setMessages] = useState<Message[]>([])
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(Boolean(initial[0]?.conversation_id))
   const [sending, setSending] = useState(false)
   const [search, setSearch] = useState('')
   const selected = items.find((x) => x.conversation_id === selectedId)
   const filtered = useMemo(() => items.filter((x) => `${x.contact_name || ''} ${x.contact_phone || ''} ${x.last_message_preview || ''}`.toLowerCase().includes(search.toLowerCase())), [items, search])
 
+  function selectConversation(conversationId: string) {
+    if (conversationId === selectedId) return
+    setLoading(true)
+    setMessages([])
+    setSelectedId(conversationId)
+  }
+
   useEffect(() => {
     if (!selectedId) return
     const supabase = createClient()
     let active = true
-    setLoading(true)
+
     Promise.all([
       supabase.rpc('get_conversation_messages', { p_tenant_id: tenantId, p_conversation_id: selectedId, p_before: null, p_limit: 100 }),
       supabase.rpc('mark_conversation_read', { p_tenant_id: tenantId, p_conversation_id: selectedId }),
-    ]).then(([res]) => { if (active) { setMessages(((res.data || []) as Message[]).reverse()); setLoading(false); setItems((old) => old.map((x) => x.conversation_id === selectedId ? {...x, unread_inbound_count:0} : x)) } })
+    ]).then(([res]) => {
+      if (!active) return
+      setMessages(((res.data || []) as Message[]).reverse())
+      setLoading(false)
+      setItems((old) => old.map((x) => x.conversation_id === selectedId ? {...x, unread_inbound_count:0} : x))
+    })
+
     const channel = supabase.channel(`conversation:${selectedId}`).on('postgres_changes', { event:'INSERT', schema:'public', table:'messages', filter:`conversation_id=eq.${selectedId}` }, () => {
       supabase.rpc('get_conversation_messages', { p_tenant_id: tenantId, p_conversation_id: selectedId, p_before:null, p_limit:100 }).then((res) => setMessages(((res.data || []) as Message[]).reverse()))
     }).subscribe()
-    return () => { active = false; void supabase.removeChannel(channel) }
+
+    return () => {
+      active = false
+      void supabase.removeChannel(channel)
+    }
   }, [selectedId, tenantId])
 
   async function assign(userId: string) {
@@ -72,7 +89,7 @@ export function ConversationsWorkspace({ tenantId, initial, members, availableTa
   }
 
   return <div className="inbox card">
-    <aside className="conversation-list"><div className="conversation-search"><input className="input" placeholder="Buscar conversa…" value={search} onChange={(e) => setSearch(e.target.value)} /></div>{filtered.map((c) => <button key={c.conversation_id} className={`conversation-item ${selectedId === c.conversation_id ? 'active':''}`} onClick={() => setSelectedId(c.conversation_id)}><div className="avatar">{(c.contact_name || c.contact_phone || '?').slice(0,1).toUpperCase()}</div><div className="conversation-copy"><div><strong>{c.contact_name || c.contact_phone || 'Contato'}</strong>{c.unread_inbound_count > 0 && <span className="unread">{c.unread_inbound_count}</span>}</div><p>{c.last_message_preview || 'Sem mensagens'}</p></div></button>)}{!filtered.length && <div className="empty">Nenhuma conversa.</div>}</aside>
+    <aside className="conversation-list"><div className="conversation-search"><input className="input" placeholder="Buscar conversa…" value={search} onChange={(e) => setSearch(e.target.value)} /></div>{filtered.map((c) => <button key={c.conversation_id} className={`conversation-item ${selectedId === c.conversation_id ? 'active':''}`} onClick={() => selectConversation(c.conversation_id)}><div className="avatar">{(c.contact_name || c.contact_phone || '?').slice(0,1).toUpperCase()}</div><div className="conversation-copy"><div><strong>{c.contact_name || c.contact_phone || 'Contato'}</strong>{c.unread_inbound_count > 0 && <span className="unread">{c.unread_inbound_count}</span>}</div><p>{c.last_message_preview || 'Sem mensagens'}</p></div></button>)}{!filtered.length && <div className="empty">Nenhuma conversa.</div>}</aside>
     <section className="chat-panel">{selected ? <><header className="chat-head"><div><strong>{selected.contact_name || selected.contact_phone || 'Contato'}</strong><small>{selected.contact_phone} · {selected.source}</small></div><select className="select compact" value={selected.assigned_user_id || ''} onChange={(e) => void assign(e.target.value)}><option value="">Sem responsável</option>{members.map((m) => <option value={m.user_id} key={m.user_id}>{m.display_name || m.email}</option>)}</select></header><div className="tag-row">{availableTags.map((tag) => { const on = parseTags(selected.tags).some((x) => x.id === tag.tag_id); return <button key={tag.tag_id} className={`tag ${on?'on':''}`} style={{borderColor:tag.tag_color}} onClick={() => void toggleTag(tag.tag_id)}>{tag.tag_name}</button> })}</div><div className="messages">{loading ? <div className="empty">Carregando mensagens…</div> : messages.map((m) => <div key={m.message_id} className={`bubble ${m.direction}`}><div>{m.content || `[${m.message_type}]`}</div><small>{new Date(m.occurred_at).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}{m.direction === 'outbound' && m.message_status ? ` · ${m.message_status}` : ''}</small></div>)}</div><form className="composer" onSubmit={send}><textarea name="message" placeholder="Escreva uma mensagem…" rows={2} /><button className="btn btn-primary" disabled={sending}>{sending?'Enviando…':'Enviar'}</button></form></> : <div className="empty">Selecione uma conversa.</div>}</section>
   </div>
 }
