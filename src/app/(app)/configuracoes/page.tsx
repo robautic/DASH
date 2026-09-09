@@ -1,14 +1,2 @@
-import { getAppContext } from '@/lib/app-context'
-import { SettingsManager } from '@/components/settings-manager'
-
-export default async function SettingsPage() {
-  const { supabase, tenantId, bootstrap, user } = await getAppContext()
-  const [settings,members,invitations,pipeline,tags] = await Promise.all([
-    supabase.rpc('get_workspace_settings',{p_tenant_id:tenantId}),
-    supabase.rpc('get_workspace_members',{p_tenant_id:tenantId}),
-    supabase.rpc('get_workspace_invitations',{p_tenant_id:tenantId}),
-    supabase.rpc('get_pipeline_config',{p_tenant_id:tenantId,p_pipeline_id:null}),
-    supabase.rpc('list_tags',{p_tenant_id:tenantId}),
-  ])
-  return <div className="page"><div className="page-head"><div><h1>Configurações</h1><p>Workspace, equipe, pipeline e organização das conversas.</p></div></div><SettingsManager tenantId={tenantId} userId={user.id} settings={(settings.data?.[0] || {}) as never} members={(members.data || []) as never[]} invitations={(invitations.data || []) as never[]} pipeline={(pipeline.data || []) as never[]} tags={(tags.data || []) as never[]} permissions={bootstrap.permissions || {}} /></div>
-}
+import {getAppContext} from '@/lib/app-context';import {SettingsManager} from '@/components/settings-manager'
+export default async function SettingsPage(){const{supabase,tenantId,bootstrap,user}=await getAppContext();const[settings,members,invitations,pipeline,tags]=await Promise.all([supabase.rpc('get_workspace_settings',{p_tenant_id:tenantId}),supabase.rpc('get_workspace_members',{p_tenant_id:tenantId}),supabase.rpc('get_workspace_invitations',{p_tenant_id:tenantId}),supabase.rpc('get_pipeline_config',{p_tenant_id:tenantId,p_pipeline_id:null}),supabase.rpc('list_tags',{p_tenant_id:tenantId})]);return <div className="page"><div className="page-head"><div><div className="page-eyebrow">Workspace</div><h1>Configurações</h1><p>Equipe, pipeline, integrações e perfil em um só lugar.</p></div></div><SettingsManager tenantId={tenantId} userId={user.id} profile={{email:bootstrap.profile?.email||user.email||'',displayName:bootstrap.profile?.display_name||null,role:bootstrap.active_workspace?.role||'member'}} settings={(settings.data?.[0]||{}) as never} members={(members.data||[]) as never[]} invitations={(invitations.data||[]) as never[]} pipeline={(pipeline.data||[]) as never[]} tags={(tags.data||[]) as never[]} permissions={bootstrap.permissions||{}}/></div>}
