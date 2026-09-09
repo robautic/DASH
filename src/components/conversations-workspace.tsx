@@ -1,0 +1,78 @@
+'use client'
+
+import { FormEvent, useEffect, useMemo, useState } from 'react'
+import { createClient } from '@/lib/supabase/client'
+
+type Conversation = { conversation_id:string; contact_name:string|null; contact_phone:string|null; contact_avatar_url:string|null; source:string; conversation_status:string; assigned_user_id:string|null; assigned_user_name:string|null; connection_id:string|null; last_message_preview:string|null; last_message_at:string|null; unread_inbound_count:number; tags:unknown }
+type Member = { user_id:string; display_name:string|null; email:string }
+type Tag = { tag_id:string; tag_name:string; tag_color:string }
+type Message = { message_id:string; direction:'inbound'|'outbound'; content:string|null; occurred_at:string; message_status:string|null; message_type:string }
+
+function parseTags(value: unknown): Array<{id:string;name:string;color:string}> {
+  if (!Array.isArray(value)) return []
+  return value.map((x) => x as Record<string, string>).map((x) => ({ id: x.id || x.tag_id, name: x.name || x.tag_name, color: x.color || x.tag_color || '#64748B' })).filter((x) => x.id)
+}
+
+export function ConversationsWorkspace({ tenantId, initial, members, availableTags }: { tenantId:string; initial:Conversation[]; members:Member[]; availableTags:Tag[] }) {
+  const [items, setItems] = useState(initial)
+  const [selectedId, setSelectedId] = useState(initial[0]?.conversation_id || '')
+  const [messages, setMessages] = useState<Message[]>([])
+  const [loading, setLoading] = useState(false)
+  const [sending, setSending] = useState(false)
+  const [search, setSearch] = useState('')
+  const selected = items.find((x) => x.conversation_id === selectedId)
+  const filtered = useMemo(() => items.filter((x) => `${x.contact_name || ''} ${x.contact_phone || ''} ${x.last_message_preview || ''}`.toLowerCase().includes(search.toLowerCase())), [items, search])
+
+  useEffect(() => {
+    if (!selectedId) return
+    const supabase = createClient()
+    let active = true
+    setLoading(true)
+    Promise.all([
+      supabase.rpc('get_conversation_messages', { p_tenant_id: tenantId, p_conversation_id: selectedId, p_before: null, p_limit: 100 }),
+      supabase.rpc('mark_conversation_read', { p_tenant_id: tenantId, p_conversation_id: selectedId }),
+    ]).then(([res]) => { if (active) { setMessages(((res.data || []) as Message[]).reverse()); setLoading(false); setItems((old) => old.map((x) => x.conversation_id === selectedId ? {...x, unread_inbound_count:0} : x)) } })
+    const channel = supabase.channel(`conversation:${selectedId}`).on('postgres_changes', { event:'INSERT', schema:'public', table:'messages', filter:`conversation_id=eq.${selectedId}` }, () => {
+      supabase.rpc('get_conversation_messages', { p_tenant_id: tenantId, p_conversation_id: selectedId, p_before:null, p_limit:100 }).then((res) => setMessages(((res.data || []) as Message[]).reverse()))
+    }).subscribe()
+    return () => { active = false; void supabase.removeChannel(channel) }
+  }, [selectedId, tenantId])
+
+  async function assign(userId: string) {
+    if (!selected) return
+    const { error } = await createClient().rpc('assign_conversation', { p_tenant_id:tenantId, p_conversation_id:selected.conversation_id, p_user_id:userId || null })
+    if (error) return alert(error.message)
+    const member = members.find((m) => m.user_id === userId)
+    setItems((old) => old.map((x) => x.conversation_id === selected.conversation_id ? {...x, assigned_user_id:userId || null, assigned_user_name:member?.display_name || member?.email || null} : x))
+  }
+
+  async function toggleTag(tagId: string) {
+    if (!selected) return
+    const current = parseTags(selected.tags)
+    const ids = current.some((x) => x.id === tagId) ? current.filter((x) => x.id !== tagId).map((x) => x.id) : [...current.map((x) => x.id), tagId]
+    const { data, error } = await createClient().rpc('set_conversation_tags', { p_tenant_id:tenantId, p_conversation_id:selected.conversation_id, p_tag_ids:ids })
+    if (error) return alert(error.message)
+    setItems((old) => old.map((x) => x.conversation_id === selected.conversation_id ? {...x, tags:data} : x))
+  }
+
+  async function send(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (!selected || !selected.connection_id) return alert('Esta conversa não possui uma conexão ativa associada.')
+    const form = new FormData(event.currentTarget)
+    const text = String(form.get('message') || '').trim()
+    if (!text) return
+    setSending(true)
+    const supabase = createClient()
+    const { error } = await supabase.functions.invoke('whatsapp-send', { body: { tenant_id:tenantId, connection_id:selected.connection_id, conversation_id:selected.conversation_id, type:'text', text } })
+    setSending(false)
+    if (error) return alert(error.message)
+    ;(event.currentTarget as HTMLFormElement).reset()
+    const res = await supabase.rpc('get_conversation_messages', { p_tenant_id:tenantId, p_conversation_id:selected.conversation_id, p_before:null, p_limit:100 })
+    setMessages(((res.data || []) as Message[]).reverse())
+  }
+
+  return <div className="inbox card">
+    <aside className="conversation-list"><div className="conversation-search"><input className="input" placeholder="Buscar conversa…" value={search} onChange={(e) => setSearch(e.target.value)} /></div>{filtered.map((c) => <button key={c.conversation_id} className={`conversation-item ${selectedId === c.conversation_id ? 'active':''}`} onClick={() => setSelectedId(c.conversation_id)}><div className="avatar">{(c.contact_name || c.contact_phone || '?').slice(0,1).toUpperCase()}</div><div className="conversation-copy"><div><strong>{c.contact_name || c.contact_phone || 'Contato'}</strong>{c.unread_inbound_count > 0 && <span className="unread">{c.unread_inbound_count}</span>}</div><p>{c.last_message_preview || 'Sem mensagens'}</p></div></button>)}{!filtered.length && <div className="empty">Nenhuma conversa.</div>}</aside>
+    <section className="chat-panel">{selected ? <><header className="chat-head"><div><strong>{selected.contact_name || selected.contact_phone || 'Contato'}</strong><small>{selected.contact_phone} · {selected.source}</small></div><select className="select compact" value={selected.assigned_user_id || ''} onChange={(e) => void assign(e.target.value)}><option value="">Sem responsável</option>{members.map((m) => <option value={m.user_id} key={m.user_id}>{m.display_name || m.email}</option>)}</select></header><div className="tag-row">{availableTags.map((tag) => { const on = parseTags(selected.tags).some((x) => x.id === tag.tag_id); return <button key={tag.tag_id} className={`tag ${on?'on':''}`} style={{borderColor:tag.tag_color}} onClick={() => void toggleTag(tag.tag_id)}>{tag.tag_name}</button> })}</div><div className="messages">{loading ? <div className="empty">Carregando mensagens…</div> : messages.map((m) => <div key={m.message_id} className={`bubble ${m.direction}`}><div>{m.content || `[${m.message_type}]`}</div><small>{new Date(m.occurred_at).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}{m.direction === 'outbound' && m.message_status ? ` · ${m.message_status}` : ''}</small></div>)}</div><form className="composer" onSubmit={send}><textarea name="message" placeholder="Escreva uma mensagem…" rows={2} /><button className="btn btn-primary" disabled={sending}>{sending?'Enviando…':'Enviar'}</button></form></> : <div className="empty">Selecione uma conversa.</div>}</section>
+  </div>
+}
