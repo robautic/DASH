@@ -2,16 +2,20 @@
 
 import { FormEvent, useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
 export function SignupForm() {
+  const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    setLoading(true); setError(''); setMessage('')
+    setLoading(true)
+    setError('')
+    setMessage('')
     const form = new FormData(event.currentTarget)
     const email = String(form.get('email') || '')
     const supabase = createClient()
@@ -29,7 +33,8 @@ export function SignupForm() {
     if (error) {
       setError(error.message)
     } else if (data.session) {
-      window.location.assign('/onboarding')
+      router.replace('/onboarding')
+      router.refresh()
       return
     } else {
       setMessage(`Enviamos um link de confirmação para ${email}.`)
