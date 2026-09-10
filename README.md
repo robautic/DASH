@@ -32,7 +32,7 @@ O Embedded Signup usa `NEXT_PUBLIC_META_APP_ID` e `NEXT_PUBLIC_META_CONFIG_ID` n
 
 A Edge Function `whatsapp-embedded-signup` recebe o código retornado pela Meta, valida o número, assina os webhooks da WABA, armazena a credencial e registra o modo da conexão (`coexistence` ou `cloud_api`).
 
-A tela de Conexões consulta `get_connection_health_v2`, que expõe o modo de cada número apenas para usuários autenticados do workspace.
+A tela de Conexões consulta `get_connection_health_v2`, que expõe o modo de cada número apenas para usuários autenticados do workspace. O modo ativo é exibido ao lado do status da conexão.
 
 ## Extensão Chrome/Edge
 
