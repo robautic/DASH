@@ -15,6 +15,14 @@ declare global {
   interface Window { FB?: FbApi; fbAsyncInit?: () => void }
 }
 
+function friendlyError(code?: string, fallback?: string) {
+  if (code === 'meta_app_not_configured') return 'A integração oficial da Meta ainda não foi ativada pelo administrador do Dash e Pipe.'
+  if (code === 'meta_code_exchange_failed') return 'A autorização da Meta expirou ou não pôde ser concluída. Tente conectar novamente.'
+  if (code === 'meta_phone_validation_failed') return 'A Meta não conseguiu validar esse número para a conexão escolhida.'
+  if (code === 'meta_webhook_subscription_failed') return 'O número foi autorizado, mas a assinatura dos eventos do WhatsApp não foi concluída.'
+  return fallback || 'Não foi possível concluir a conexão.'
+}
+
 export function MetaEmbeddedSignup({ tenantId, onConnected }: { tenantId: string; onConnected?: () => void }) {
   const appId = process.env.NEXT_PUBLIC_META_APP_ID || ''
   const configId = process.env.NEXT_PUBLIC_META_CONFIG_ID || ''
@@ -47,13 +55,13 @@ export function MetaEmbeddedSignup({ tenantId, onConnected }: { tenantId: string
     setLoading(null)
     completing.current = false
     if (fnError || data?.error) {
-      setError(data?.message || data?.meta_error || fnError?.message || 'Não foi possível concluir a conexão.')
+      setError(friendlyError(data?.error, data?.message || data?.meta_error || fnError?.message))
       return
     }
 
     setMessage(modeRef.current === 'coexistence'
-      ? 'Coexistência ativada. Seu WhatsApp Business pode continuar sendo usado junto com o Dash e Pipe.'
-      : 'WhatsApp Business conectado via Cloud API.')
+      ? 'Coexistência ativada. O número continua no WhatsApp Business e também passa a operar no Dash e Pipe.'
+      : 'WhatsApp Business conectado via Cloud API dedicada.')
     setError('')
     onConnected?.()
   }, [tenantId, onConnected])
@@ -73,10 +81,10 @@ export function MetaEmbeddedSignup({ tenantId, onConnected }: { tenantId: string
           sessionRef.current = payload.data || {}
           void complete()
         } else if (payload.event === 'CANCEL') {
-          setError('Conexão cancelada antes de concluir.')
+          setError('A conexão foi cancelada. Nenhuma alteração foi feita no número.')
           setLoading(null)
         } else if (payload.event === 'ERROR') {
-          setError(payload.data?.error_message || 'A Meta retornou um erro no Embedded Signup.')
+          setError(payload.data?.error_message || 'A Meta informou que não foi possível concluir este onboarding.')
           setLoading(null)
         }
       } catch {}
@@ -106,11 +114,11 @@ export function MetaEmbeddedSignup({ tenantId, onConnected }: { tenantId: string
     setError('')
     setMessage('')
     if (!configured) {
-      setError('Faltam NEXT_PUBLIC_META_APP_ID e NEXT_PUBLIC_META_CONFIG_ID.')
+      setError('A conexão com a Meta ainda está sendo configurada no Dash e Pipe.')
       return
     }
     if (!window.FB || !ready) {
-      setError('O SDK da Meta ainda está carregando. Tente novamente em instantes.')
+      setError('A janela segura da Meta ainda está carregando. Tente novamente em instantes.')
       return
     }
 
@@ -142,32 +150,41 @@ export function MetaEmbeddedSignup({ tenantId, onConnected }: { tenantId: string
       <article className="connection-mode-card recommended">
         <div className="mode-head"><span className="premium-pill">Recomendado</span><span className="mode-icon">↔</span></div>
         <h3>Continuar usando meu WhatsApp Business</h3>
-        <p>Conecte o número ao Dash e Pipe sem abandonar o WhatsApp Business App no celular.</p>
+        <p>Para quem já atende pelo WhatsApp Business no celular e quer adicionar o Dash e Pipe sem trocar o número.</p>
         <ul>
-          <li>Continue respondendo pelo celular</li>
-          <li>Use o mesmo número na operação</li>
-          <li>Centralize conversas, pipeline e métricas</li>
+          <li>Continue usando o WhatsApp Business App</li>
+          <li>Conecte o mesmo número ao atendimento da plataforma</li>
+          <li>Leve as conversas para pipeline, equipe e métricas</li>
         </ul>
+        <div className="mode-preflight">
+          <strong>Antes de conectar</strong>
+          <span>Tenha o celular com o WhatsApp Business por perto e acesso administrativo à empresa usada na Meta.</span>
+          <small>A elegibilidade final do número é confirmada pela própria Meta durante o onboarding.</small>
+        </div>
         <button type="button" className="btn btn-primary" onClick={() => launch('coexistence')} disabled={Boolean(loading) || (!ready && configured)}>
-          {loading === 'coexistence' ? 'Conectando…' : 'Usar Coexistência'}
+          {loading === 'coexistence' ? 'Abrindo Meta…' : 'Usar Coexistência'}
         </button>
       </article>
 
       <article className="connection-mode-card">
         <div className="mode-head"><span className="mode-label">Cloud API</span><span className="mode-icon">☁</span></div>
-        <h3>Usar somente a API</h3>
-        <p>Ideal para um número dedicado à operação, atendido diretamente pelo Dash e Pipe e integrações.</p>
+        <h3>Usar número dedicado à API</h3>
+        <p>Para operações que querem centralizar o atendimento do número diretamente no Dash e Pipe e nas integrações oficiais.</p>
         <ul>
-          <li>Operação centralizada na plataforma</li>
           <li>Cloud API oficial da Meta</li>
-          <li>Indicado para times e automações</li>
+          <li>Operação centralizada para equipe e automações</li>
+          <li>Separação clara entre número pessoal e operação</li>
         </ul>
+        <div className="mode-preflight neutral">
+          <strong>Indicado quando</strong>
+          <span>O número será dedicado à operação via API e não depende do uso diário no WhatsApp Business App.</span>
+        </div>
         <button type="button" className="btn btn-secondary" onClick={() => launch('cloud_api')} disabled={Boolean(loading) || (!ready && configured)}>
-          {loading === 'cloud_api' ? 'Conectando…' : 'Conectar via Cloud API'}
+          {loading === 'cloud_api' ? 'Abrindo Meta…' : 'Conectar via Cloud API'}
         </button>
       </article>
 
-      {!configured && <div className="embedded-status">Embedded Signup pronto no código. Falta cadastrar App ID e Configuration ID da Meta.</div>}
+      {!configured && <div className="embedded-status setup-pending"><strong>Configuração pendente</strong><span>O fluxo já está implementado. Falta ativar as credenciais do aplicativo Meta para liberar os botões em produção.</span></div>}
       {message && <div className="success-box connection-feedback">{message}</div>}
       {error && <div className="error-box connection-feedback">{error}</div>}
     </div>
