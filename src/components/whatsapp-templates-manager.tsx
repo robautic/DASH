@@ -49,7 +49,11 @@ export function WhatsAppTemplatesManager({ tenantId, connections }: Props) {
   }
 
   useEffect(() => {
-    if (connectionId) void loadTemplates(connectionId)
+    if (!connectionId) return
+    const timer = window.setTimeout(() => {
+      void loadTemplates(connectionId)
+    }, 0)
+    return () => window.clearTimeout(timer)
     // loadTemplates intentionally depends on the selected connection only.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [connectionId])
