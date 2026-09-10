@@ -1,9 +1,11 @@
 'use client'
 
 import { FormEvent, useState } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { MetaEmbeddedSignup } from '@/components/meta-embedded-signup'
+import { WhatsAppQrConnect } from '@/components/whatsapp-qr-connect'
 import { UiIcon } from '@/components/ui-icon'
 
 type Connection = {
@@ -16,10 +18,11 @@ type Connection = {
   last_sync_at: string | null
   message: string
   action_key: string
-  connection_mode: 'coexistence' | 'cloud_api' | 'unknown' | string
+  connection_mode: 'coexistence' | 'cloud_api' | 'qr_web' | 'unknown' | string
 }
 
-function modeLabel(mode: string) {
+function modeLabel(mode: string, provider: string) {
+  if (mode === 'qr_web' || provider === 'evolution_baileys') return 'QR Code · WhatsApp Web'
   if (mode === 'coexistence') return 'Coexistência'
   if (mode === 'cloud_api') return 'Cloud API'
   return 'Modo não identificado'
@@ -69,12 +72,26 @@ export function ConnectionsManager({
 
   return (
     <>
-      <div className="connect-hero">
-        <section className="card connect-main">
-          <div className="connect-badge"><UiIcon name="whatsapp" size={14} /> WHATSAPP BUSINESS</div>
-          <h2>Conecte sem abandonar o número que você já usa.</h2>
+      <div className="connection-choice-grid">
+        <section className="card connection-choice featured">
+          <div className="connect-badge">⚡ CONEXÃO RÁPIDA</div>
+          <h2>Escaneie um QR Code e comece.</h2>
           <p>
-            Para quem já atende pelo WhatsApp Business, a Coexistência mantém o app no celular e conecta o mesmo número ao Dash e Pipe. Para operações dedicadas, use a Cloud API.
+            Ideal para quem só quer conectar o WhatsApp que já usa no celular sem passar pelo cadastro empresarial da Meta.
+          </p>
+          <div className="connect-actions">
+            <WhatsAppQrConnect tenantId={tenantId} canManage={canManage} onConnected={() => router.refresh()} />
+          </div>
+          <div className="meta-note">
+            Usa um dispositivo vinculado do WhatsApp Web. É a opção mais simples, mas não é a API oficial da Meta e pode exigir reconexão quando a sessão expirar.
+          </div>
+        </section>
+
+        <section className="card connection-choice">
+          <div className="connect-badge"><UiIcon name="whatsapp" size={14} /> API OFICIAL</div>
+          <h2>Conecte pela Meta.</h2>
+          <p>
+            Para empresas que precisam de templates, maior estabilidade e uma integração oficial com WhatsApp Business Platform.
           </p>
           <div className="connect-actions">
             {canManage ? (
@@ -84,33 +101,18 @@ export function ConnectionsManager({
             )}
           </div>
           <div className="meta-note">
-            O onboarding oficial da Meta identifica empresa, WABA e número. Tokens ficam protegidos no backend.
+            Coexistência mantém o WhatsApp Business no celular. Cloud API dedicada atende operações que usam um número principalmente na plataforma.
           </div>
         </section>
-
-        <aside className="card connect-side">
-          <div className="card-title-row">
-            <div>
-              <h3>Qual modo escolher?</h3>
-              <div className="card-kicker">Coexistência é a opção recomendada para quem já usa o Business App</div>
-            </div>
-          </div>
-          <div className="connect-steps">
-            <div className="connect-step">
-              <span>↔</span>
-              <div><strong>Coexistência · recomendado</strong><small>Mesmo número no celular e no Dash e Pipe.</small></div>
-            </div>
-            <div className="connect-step">
-              <span>☁</span>
-              <div><strong>Cloud API dedicada</strong><small>Ideal para um número operado principalmente pela plataforma.</small></div>
-            </div>
-            <div className="connect-step">
-              <span>✓</span>
-              <div><strong>Sem copiar token</strong><small>O fluxo oficial da Meta faz a autorização e o backend protege a credencial.</small></div>
-            </div>
-          </div>
-        </aside>
       </div>
+
+      <aside className="card connection-explainer">
+        <div>
+          <strong>Qual caminho usar?</strong>
+          <span>QR Code para começar rápido · Meta para operação oficial e escala.</span>
+        </div>
+        <Link className="btn btn-secondary" href="/configuracoes/modelos">Gerenciar modelos da Meta</Link>
+      </aside>
 
       <section className="card card-pad">
         <div className="card-title-row">
@@ -121,6 +123,8 @@ export function ConnectionsManager({
           <span className="premium-pill">{initial.length} conexão{initial.length === 1 ? '' : 'ões'}</span>
         </div>
 
+        {error && <div className="error-box" style={{ marginTop: 12 }}>{error}</div>}
+
         <div className="connection-list">
           {initial.map((c) => (
             <div className="connection-row" key={c.connection_id}>
@@ -129,7 +133,7 @@ export function ConnectionsManager({
                 <small>{c.phone_number || 'Número não informado'} · {c.message}</small>
               </div>
               <div className="row-actions">
-                <span className="premium-pill">{modeLabel(c.connection_mode)}</span>
+                <span className="premium-pill">{modeLabel(c.connection_mode, c.provider)}</span>
                 <span className={`connection-status ${c.status}`}>{c.status}</span>
                 {canManage && c.status !== 'disconnected' && (
                   <button className="btn btn-danger" onClick={() => void disconnect(c.connection_id)}>Desconectar</button>
@@ -143,9 +147,8 @@ export function ConnectionsManager({
 
       {canManage && (
         <details className="advanced-connect">
-          <summary>Configuração avançada · token manual</summary>
+          <summary>Configuração avançada · token manual da Meta</summary>
           <form onSubmit={connect}>
-            {error && <div className="error-box">{error}</div>}
             <div className="form-grid">
               <div className="field"><label>Nome da conexão</label><input className="input" name="display_name" placeholder="WhatsApp comercial" /></div>
               <div className="field"><label>Phone Number ID</label><input className="input" name="phone_number_id" required /></div>
