@@ -1,18 +1,19 @@
 {
   "manifest_version": 3,
   "name": "Fluxolu Companion",
-  "version": "0.1.0",
-  "description": "Leve o contexto do WhatsApp Web para a Fluxolu sem automatizar mensagens.",
-  "permissions": ["sidePanel", "tabs", "activeTab", "storage"],
-  "host_permissions": ["https://web.whatsapp.com/*"],
+  "version": "0.2.0",
+  "description": "Organize automaticamente textos carregados no WhatsApp Web na sua Fluxolu.",
+  "permissions": ["sidePanel", "tabs", "activeTab", "storage", "alarms"],
+  "host_permissions": ["https://web.whatsapp.com/*", "https://dash-e-pipe.vercel.app/*"],
   "background": { "service_worker": "background.js" },
   "action": { "default_title": "Abrir Fluxolu" },
   "side_panel": { "default_path": "sidepanel.html" },
   "content_scripts": [
     {
       "matches": ["https://web.whatsapp.com/*"],
-      "js": ["content.js"],
+      "js": ["capture.js", "content.js"],
       "run_at": "document_idle"
-    }
+    },
+    { "matches": ["https://dash-e-pipe.vercel.app/*"], "js": ["app-bridge.js"], "run_at": "document_idle" }
   ]
 }

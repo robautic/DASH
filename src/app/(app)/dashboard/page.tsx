@@ -85,7 +85,7 @@ export default async function DashboardPage({
         <div>
           <div className="page-eyebrow">Visão geral</div>
           <h1>Olá, vamos acompanhar sua operação?</h1>
-          <p>Últimos 30 dias, com dados reais do WhatsApp e pipeline.</p>
+          <p>Últimos 30 dias, com os dados recebidos pelas suas integrações.</p>
         </div>
         <div className="page-actions">
           <span className="premium-pill">
@@ -98,6 +98,7 @@ export default async function DashboardPage({
           </span>
         </div>
       </div>
+      <p className="muted">Extensão: os indicadores incluem somente conversas capturadas. Vendas e receita dependem dos registros no pipeline. <Link href="/extensao">Conectar WhatsApp Web →</Link></p>
       <FilterBar options={filters} />
       <section className="metric-grid">
         <div className="metric-card">
