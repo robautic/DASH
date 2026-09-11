@@ -1,16 +1,30 @@
 {
-  "name": "leaddash",
+  "name": "dash-e-pipe",
+  "version": "1.0.0",
   "private": true,
-  "version": "0.0.0",
-  "workspaces": [
-    "client",
-    "server"
-  ],
   "scripts": {
-    "dev:client": "npm run dev -w client",
-    "dev:server": "npm run dev -w server",
-    "build:client": "npm run build -w client",
-    "build:server": "npm run build -w server",
-    "typecheck:server": "npm run typecheck -w server"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint . --max-warnings=0"
+  },
+  "dependencies": {
+    "@supabase/ssr": "0.12.7",
+    "@supabase/supabase-js": "^2.112.3",
+    "next": "16.3.3",
+    "react": "19.2.1",
+    "react-dom": "19.2.1"
+  },
+  "devDependencies": {
+    "@types/node": "^24.7.0",
+    "@types/react": "^19.2.1",
+    "@types/react-dom": "^19.2.1",
+    "eslint": "^9.35.0",
+    "eslint-config-next": "16.3.3",
+    "typescript": "^5.9.3"
+  },
+  "engines": {
+    "node": ">=22"
   }
 }
