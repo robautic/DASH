@@ -7,7 +7,7 @@ import './qr-connect.css'
 import './reference-ui.css'
 
 export const metadata: Metadata = {
-  title: { default: 'Dash e Pipe', template: '%s · Dash e Pipe' },
+  title: { default: 'Fluxolu', template: '%s · Fluxolu' },
   description:
     'Transforme seu WhatsApp em uma operação organizada, com Pipeline e Dashboard.',
 }

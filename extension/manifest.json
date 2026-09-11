@@ -1,12 +1,12 @@
 {
   "manifest_version": 3,
-  "name": "Dash e Pipe Companion",
+  "name": "Fluxolu Companion",
   "version": "0.1.0",
-  "description": "Leve o contexto do WhatsApp Web para o Dash e Pipe sem automatizar mensagens.",
+  "description": "Leve o contexto do WhatsApp Web para a Fluxolu sem automatizar mensagens.",
   "permissions": ["sidePanel", "tabs", "activeTab", "storage"],
   "host_permissions": ["https://web.whatsapp.com/*"],
   "background": { "service_worker": "background.js" },
-  "action": { "default_title": "Abrir Dash e Pipe" },
+  "action": { "default_title": "Abrir Fluxolu" },
   "side_panel": { "default_path": "sidepanel.html" },
   "content_scripts": [
     {

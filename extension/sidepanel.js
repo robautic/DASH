@@ -1,4 +1,4 @@
-const DEFAULT_APP_URL = 'https://dash-e-pipe-hm8if2uxz-valeskatkg-5928s-projects.vercel.app'
+const DEFAULT_APP_URL = 'https://dash-e-pipe.vercel.app'
 const nameEl = document.getElementById('contact-name')
 const phoneEl = document.getElementById('contact-phone')
 const statusEl = document.getElementById('status')

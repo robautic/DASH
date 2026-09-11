@@ -1,10 +1,10 @@
-# Meta App Review — Dash e Pipe
+# Meta App Review — Fluxolu
 
 Este documento organiza a preparação técnica e a gravação da evidência para a análise do app da Meta.
 
 ## Objetivo da demonstração
 
-Mostrar, em um único fluxo contínuo, que o Dash e Pipe usa a Plataforma do WhatsApp Business para:
+Mostrar, em um único fluxo contínuo, que a Fluxolu usa a Plataforma do WhatsApp Business para:
 
 1. conectar uma conta/número autorizado;
 2. visualizar conversas recebidas por webhook;
@@ -29,7 +29,7 @@ Mostrar, em um único fluxo contínuo, que o Dash e Pipe usa a Plataforma do Wha
 
 ### 1. Identificação do produto
 
-Abrir a landing page pública do Dash e Pipe e mostrar rapidamente o nome do produto e sua finalidade.
+Abrir a landing page pública da Fluxolu e mostrar rapidamente o nome do produto e sua finalidade.
 
 ### 2. Login
 
@@ -54,11 +54,11 @@ Mostrar a lista de modelos retornada pela Meta. Depois criar um modelo simples d
 - Idioma: `pt_BR`
 - Corpo: `Olá! Seu atendimento foi confirmado.`
 
-Enviar o modelo para análise e mostrar a confirmação do Dash e Pipe. Atualizar a lista e mostrar o status retornado pela Meta quando disponível.
+Enviar o modelo para análise e mostrar a confirmação da Fluxolu. Atualizar a lista e mostrar o status retornado pela Meta quando disponível.
 
 ### 6. Encerramento
 
-Mostrar novamente o Dashboard ou a tela de Conversas para deixar claro que o gerenciamento do WhatsApp faz parte do produto Dash e Pipe e não é uma ferramenta isolada.
+Mostrar novamente o Dashboard ou a tela de Conversas para deixar claro que o gerenciamento do WhatsApp faz parte do produta Fluxolu e não é uma ferramenta isolada.
 
 ## Cuidados na gravação
 

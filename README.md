@@ -1,4 +1,4 @@
-# Dash e Pipe
+# Fluxolu
 
 SaaS para transformar o WhatsApp em uma operação organizada com Conversas, Pipeline e Dashboard.
 
@@ -22,9 +22,9 @@ SaaS para transformar o WhatsApp em uma operação organizada com Conversas, Pip
 
 ## WhatsApp
 
-O Dash e Pipe oferece três caminhos de conexão:
+A Fluxolu oferece três caminhos de conexão:
 
-1. **Coexistência — recomendado**: para empresas que já usam o WhatsApp Business App e querem manter o mesmo número no celular enquanto conectam a operação ao Dash e Pipe.
+1. **Coexistência — recomendado**: para empresas que já usam o WhatsApp Business App e querem manter o mesmo número no celular enquanto conectam a operação à Fluxolu.
 2. **Cloud API dedicada**: para números destinados principalmente à operação via plataforma/API.
 3. **Configuração manual avançada**: fallback técnico com Phone Number ID, Business Account ID e Access Token.
 
@@ -36,7 +36,7 @@ A tela de Conexões consulta `get_connection_health_v2`, que expõe o modo de ca
 
 ## Extensão Chrome/Edge
 
-A pasta `extension/` contém a companion extension do Dash e Pipe. Ela adiciona um painel lateral ao WhatsApp Web para abrir o contato/conversa correspondente no sistema. A extensão é interface complementar e não automatiza envio de mensagens pela interface do WhatsApp Web.
+A pasta `extension/` contém a companion extension da Fluxolu. Ela adiciona um painel lateral ao WhatsApp Web para abrir o contato/conversa correspondente no sistema. A extensão é interface complementar e não automatiza envio de mensagens pela interface do WhatsApp Web.
 
 ## Ambiente
 

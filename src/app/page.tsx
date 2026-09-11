@@ -4,7 +4,7 @@ export default function Home() {
   return (
     <main style={{ minHeight: '100vh', background: '#0d0f0e', color: '#f5f7f4' }}>
       <header style={{ maxWidth: 1160, margin: '0 auto', padding: '28px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 20 }}>
-        <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: '-0.04em' }}>Dash e Pipe</div>
+        <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: '-0.04em' }}>Fluxolu</div>
         <nav style={{ display: 'flex', alignItems: 'center', gap: 18, fontSize: 14 }}>
           <a href="#recursos">Recursos</a>
           <Link href="/privacidade">Privacidade</Link>
@@ -45,7 +45,7 @@ export default function Home() {
 
       <footer style={{ borderTop: '1px solid #242824' }}>
         <div style={{ maxWidth: 1160, margin: '0 auto', padding: '28px 24px', display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', gap: 18, color: '#929991', fontSize: 13 }}>
-          <span>© {new Date().getFullYear()} Dash e Pipe.</span>
+          <span>© {new Date().getFullYear()} Fluxolu.</span>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16 }}>
             <Link href="/privacidade">Política de Privacidade</Link>
             <Link href="/termos">Termos de Uso</Link>

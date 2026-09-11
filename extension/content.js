@@ -29,7 +29,7 @@ if (!document.getElementById('dash-pipe-companion-launcher')) {
       button{width:46px;height:46px;border:0;border-radius:15px;background:#d8ff72;color:#111214;font:900 16px system-ui;box-shadow:0 12px 30px rgba(0,0,0,.28);cursor:pointer;transition:.18s transform}
       button:hover{transform:translateY(-2px)}
     </style>
-    <button type="button" title="Abrir Dash e Pipe">D</button>`
+    <button type="button" title="Abrir Fluxolu">F</button>`
   shadow.querySelector('button').addEventListener('click', () => chrome.runtime.sendMessage({ type: 'DASH_PIPE_OPEN_SIDE_PANEL' }))
   document.documentElement.appendChild(host)
 }

@@ -640,10 +640,71 @@ body:has(.app-grid) {
   }
 }
 @media (max-width: 620px) {
-  .app-grid .sidebar > div:first-child { display: none !important; }
-  .app-grid .sidebar > div:has(.nav) { width: 100%; }
+  .app-grid .sidebar > div:first-child {
+    display: none !important;
+  }
+  .app-grid .sidebar > div:has(.nav) {
+    width: 100%;
+  }
 }
-html:has(.app-grid) { background: #dcd0ee; }
-body:has(.app-grid) { display: flow-root; }
-.app-grid .sidebar .brand-word { font-size: 17px; white-space: nowrap; }
-.app-grid .sidebar .brand-mark { flex-shrink: 0; }
+html:has(.app-grid) {
+  background: #dcd0ee;
+}
+body:has(.app-grid) {
+  display: flow-root;
+}
+.app-grid .sidebar .brand-word {
+  font-size: 17px;
+  white-space: nowrap;
+}
+.app-grid .sidebar .brand-mark {
+  flex-shrink: 0;
+}
+.app-grid .connection-choice-grid {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 18px;
+}
+.app-grid .connection-choice {
+  min-height: auto;
+}
+.app-grid .connection-choice h2 {
+  max-width: 760px;
+}
+.app-grid .connection-choice p {
+  color: var(--muted);
+  max-width: 760px;
+}
+.app-grid .connection-choice .connect-actions {
+  display: block;
+}
+.app-grid .connection-mode-card {
+  padding: 24px;
+  border-radius: 22px;
+}
+.app-grid .connection-mode-card.recommended {
+  border-color: #b7cc8c;
+  background: #f5fae9;
+}
+.app-grid .connection-mode-card .mode-preflight {
+  border-color: #d9e6c0;
+  background: #fff;
+}
+.app-grid .alternative-connection summary {
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+}
+.app-grid .connection-choice .connect-badge {
+  background: #e7f3ce;
+  color: #476626;
+  border-color: #d2e5b0;
+}
+.app-grid .connection-mode-card .btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.app-grid .qr-placeholder {
+  background: #f0edf5;
+  color: #6c6176;
+  border-color: #d8cfe3;
+}

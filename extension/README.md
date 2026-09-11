@@ -1,4 +1,4 @@
-# Dash e Pipe Companion
+# Fluxolu Companion
 
 Extensão Manifest V3 para Chrome e Edge.
 
@@ -7,7 +7,7 @@ Extensão Manifest V3 para Chrome e Edge.
 - adiciona um atalho flutuante no WhatsApp Web;
 - abre um Side Panel;
 - tenta identificar nome/telefone do chat aberto;
-- abre `/conversas?search=...` no Dash e Pipe;
+- abre `/conversas?search=...` na Fluxolu;
 - permite trocar a URL do ambiente pelo próprio painel.
 
 A extensão **não automatiza envio de mensagens** e não manipula o token do WhatsApp.
