@@ -23,7 +23,7 @@ type Connection = {
 
 function modeLabel(mode: string, provider: string) {
   if (mode === 'qr_web' || provider === 'evolution_baileys') return 'QR Code · WhatsApp Web'
-  if (mode === 'coexistence') return 'Coexistência'
+  if (mode === 'coexistence') return 'Coexistência oficial'
   if (mode === 'cloud_api') return 'Cloud API'
   return 'Modo não identificado'
 }
@@ -74,24 +74,10 @@ export function ConnectionsManager({
     <>
       <div className="connection-choice-grid">
         <section className="card connection-choice featured">
-          <div className="connect-badge">⚡ CONEXÃO RÁPIDA</div>
-          <h2>Escaneie um QR Code e comece.</h2>
+          <div className="connect-badge"><UiIcon name="whatsapp" size={14} /> RECOMENDADO · OFICIAL</div>
+          <h2>Conecte o WhatsApp Business e continue usando no celular.</h2>
           <p>
-            Ideal para quem só quer conectar o WhatsApp que já usa no celular sem passar pelo cadastro empresarial da Meta.
-          </p>
-          <div className="connect-actions">
-            <WhatsAppQrConnect tenantId={tenantId} canManage={canManage} onConnected={() => router.refresh()} />
-          </div>
-          <div className="meta-note">
-            Usa um dispositivo vinculado do WhatsApp Web. É a opção mais simples, mas não é a API oficial da Meta e pode exigir reconexão quando a sessão expirar.
-          </div>
-        </section>
-
-        <section className="card connection-choice">
-          <div className="connect-badge"><UiIcon name="whatsapp" size={14} /> API OFICIAL</div>
-          <h2>Conecte pela Meta.</h2>
-          <p>
-            Para empresas que precisam de templates, maior estabilidade e uma integração oficial com WhatsApp Business Platform.
+            A Coexistência conecta o mesmo número ao Dash e Pipe pela plataforma oficial da Meta, sem obrigar você a abandonar o WhatsApp Business App.
           </p>
           <div className="connect-actions">
             {canManage ? (
@@ -101,7 +87,21 @@ export function ConnectionsManager({
             )}
           </div>
           <div className="meta-note">
-            Coexistência mantém o WhatsApp Business no celular. Cloud API dedicada atende operações que usam um número principalmente na plataforma.
+            O processo acontece no onboarding seguro da Meta. Dependendo da etapa e da elegibilidade do número, a Meta pode solicitar confirmações no celular e apresentar o vínculo por QR Code.
+          </div>
+        </section>
+
+        <section className="card connection-choice">
+          <div className="connect-badge">⚡ ALTERNATIVA RÁPIDA</div>
+          <h2>Conectar como dispositivo pelo QR Code.</h2>
+          <p>
+            Alternativa para quem quer vincular o WhatsApp pelo fluxo de dispositivo do WhatsApp Web sem usar a API oficial da Meta.
+          </p>
+          <div className="connect-actions">
+            <WhatsAppQrConnect tenantId={tenantId} canManage={canManage} onConnected={() => router.refresh()} />
+          </div>
+          <div className="meta-note">
+            Usa Evolution/Baileys e não é a API oficial da Meta. Pode exigir reconexão e depende de infraestrutura própria para manter a sessão ativa.
           </div>
         </section>
       </div>
@@ -109,7 +109,7 @@ export function ConnectionsManager({
       <aside className="card connection-explainer">
         <div>
           <strong>Qual caminho usar?</strong>
-          <span>QR Code para começar rápido · Meta para operação oficial e escala.</span>
+          <span>Coexistência oficial primeiro · QR via WhatsApp Web somente como alternativa.</span>
         </div>
         <Link className="btn btn-secondary" href="/configuracoes/modelos">Gerenciar modelos da Meta</Link>
       </aside>
