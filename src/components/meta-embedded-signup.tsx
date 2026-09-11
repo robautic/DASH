@@ -60,7 +60,7 @@ export function MetaEmbeddedSignup({ tenantId, onConnected }: { tenantId: string
     }
 
     setMessage(modeRef.current === 'coexistence'
-      ? 'Coexistência ativada. O número continua no WhatsApp Business e também passa a operar no Dash e Pipe.'
+      ? 'WhatsApp conectado oficialmente. Você pode continuar usando o WhatsApp Business no celular e atender também pelo Dash e Pipe.'
       : 'WhatsApp Business conectado via Cloud API dedicada.')
     setError('')
     onConnected?.()
@@ -149,20 +149,20 @@ export function MetaEmbeddedSignup({ tenantId, onConnected }: { tenantId: string
     <div className="connection-mode-grid">
       <article className="connection-mode-card recommended">
         <div className="mode-head"><span className="premium-pill">Recomendado</span><span className="mode-icon">↔</span></div>
-        <h3>Continuar usando meu WhatsApp Business</h3>
-        <p>Para quem já atende pelo WhatsApp Business no celular e quer adicionar o Dash e Pipe sem trocar o número.</p>
+        <h3>Usar o mesmo WhatsApp Business</h3>
+        <p>Conecte oficialmente o número que já está no seu celular e leve o atendimento para o Dash e Pipe.</p>
         <ul>
-          <li>Continue usando o WhatsApp Business App</li>
-          <li>Conecte o mesmo número ao atendimento da plataforma</li>
-          <li>Leve as conversas para pipeline, equipe e métricas</li>
+          <li>Mesmo número no WhatsApp Business App</li>
+          <li>Atendimento também dentro do Dash e Pipe</li>
+          <li>Pipeline, equipe, métricas e integrações</li>
         </ul>
         <div className="mode-preflight">
-          <strong>Antes de conectar</strong>
-          <span>Tenha o celular com o WhatsApp Business por perto e acesso administrativo à empresa usada na Meta.</span>
-          <small>A elegibilidade final do número é confirmada pela própria Meta durante o onboarding.</small>
+          <strong>Como funciona</strong>
+          <span>O Dash e Pipe abre o processo seguro da Meta. Siga as etapas exibidas pela Meta e confirme o número no celular quando solicitado.</span>
+          <small>A Meta decide as etapas disponíveis para cada conta e número durante o onboarding.</small>
         </div>
         <button type="button" className="btn btn-primary" onClick={() => launch('coexistence')} disabled={Boolean(loading) || (!ready && configured)}>
-          {loading === 'coexistence' ? 'Abrindo Meta…' : 'Usar Coexistência'}
+          {loading === 'coexistence' ? 'Abrindo conexão oficial…' : 'Conectar meu WhatsApp Business'}
         </button>
       </article>
 
@@ -180,11 +180,11 @@ export function MetaEmbeddedSignup({ tenantId, onConnected }: { tenantId: string
           <span>O número será dedicado à operação via API e não depende do uso diário no WhatsApp Business App.</span>
         </div>
         <button type="button" className="btn btn-secondary" onClick={() => launch('cloud_api')} disabled={Boolean(loading) || (!ready && configured)}>
-          {loading === 'cloud_api' ? 'Abrindo Meta…' : 'Conectar via Cloud API'}
+          {loading === 'cloud_api' ? 'Abrindo Meta…' : 'Conectar número dedicado'}
         </button>
       </article>
 
-      {!configured && <div className="embedded-status setup-pending"><strong>Configuração pendente</strong><span>O fluxo já está implementado. Falta ativar as credenciais do aplicativo Meta para liberar os botões em produção.</span></div>}
+      {!configured && <div className="embedded-status setup-pending"><strong>Configuração pendente</strong><span>O fluxo oficial já está implementado. Falta liberar o App ID e o Configuration ID da Meta no ambiente de produção.</span></div>}
       {message && <div className="success-box connection-feedback">{message}</div>}
       {error && <div className="error-box connection-feedback">{error}</div>}
     </div>
