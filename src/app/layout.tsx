@@ -4,12 +4,20 @@ import './product.css'
 import './premium.css'
 import './coexistence.css'
 import './qr-connect.css'
+import './reference-ui.css'
 
 export const metadata: Metadata = {
   title: { default: 'Dash e Pipe', template: '%s · Dash e Pipe' },
-  description: 'Transforme seu WhatsApp em uma operação organizada, com Pipeline e Dashboard.',
+  description:
+    'Transforme seu WhatsApp em uma operação organizada, com Pipeline e Dashboard.',
 }
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="pt-BR"><body>{children}</body></html>
+export default function RootLayout({
+  children,
+}: Readonly<{ children: React.ReactNode }>) {
+  return (
+    <html lang="pt-BR">
+      <body>{children}</body>
+    </html>
+  )
 }
