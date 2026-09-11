@@ -1,4 +1,4 @@
-const DEFAULT_APP_URL = 'https://dash-e-pipe-hm8if2uxz-valeskatkg-5928s-projects.vercel.app'
+const DEFAULT_APP_URL = 'https://dash-e-pipe.vercel.app'
 const nameEl = document.getElementById('contact-name')
 const phoneEl = document.getElementById('contact-phone')
 const statusEl = document.getElementById('status')
@@ -48,3 +48,28 @@ document.getElementById('save-url').addEventListener('click', async () => {
 })
 
 loadSettings().then(readContext)
+
+const syncStatus = document.getElementById('sync-status')
+async function syncAction(type) {
+  try {
+    const result = await chrome.runtime.sendMessage({ type })
+    if (result?.error) throw new Error(result.error)
+    return result
+  } catch (error) { syncStatus.textContent = error.message; return null }
+}
+document.getElementById('open-bridge').addEventListener('click', () => chrome.tabs.create({ url: `${DEFAULT_APP_URL}/extensao` }))
+document.getElementById('prepare-sync').addEventListener('click', async () => {
+  const result = await syncAction('FLUXOLU_PREPARE')
+  document.getElementById('enable-sync').disabled = !result?.tenantId
+  document.getElementById('sync-workspace').textContent = result?.name ? `Enviar para: ${result.name}` : ''
+})
+document.getElementById('enable-sync').addEventListener('click', async () => {
+  await syncAction('FLUXOLU_ENABLE'); document.getElementById('enable-sync').disabled = true; await showSyncState()
+})
+document.getElementById('pause-sync').addEventListener('click', async () => { await syncAction('FLUXOLU_PAUSE'); await showSyncState() })
+async function showSyncState() {
+  const s = await syncAction('FLUXOLU_STATE')
+  if (s) syncStatus.textContent = `${s.status || ''}${s.pending ? ` ${s.pending} pendentes.` : ''}${s.lastSync ? ` Último envio: ${new Date(s.lastSync).toLocaleTimeString()}.` : ''}`
+}
+setInterval(showSyncState, 3000)
+void showSyncState()

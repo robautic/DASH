@@ -3,26 +3,37 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Dash e Pipe</title>
+  <title>Fluxolu</title>
   <link rel="stylesheet" href="sidepanel.css" />
 </head>
 <body>
   <main class="shell">
-    <header class="brand"><span>D</span><div><strong>Dash e Pipe</strong><small>Companion</small></div></header>
+    <header class="brand"><span>F</span><div><strong>Fluxolu</strong><small>Companion</small></div></header>
     <section class="hero">
       <p class="eyebrow">WhatsApp Web</p>
       <h1 id="contact-name">Conversa atual</h1>
       <p id="contact-phone" class="muted">Buscando contexto…</p>
       <div class="actions">
-        <button id="open-app" class="primary">Abrir no Dash e Pipe</button>
+        <button id="open-app" class="primary">Abrir na Fluxolu</button>
         <button id="refresh" class="secondary">Atualizar</button>
       </div>
     </section>
     <section class="card">
-      <label for="app-url">URL do Dash e Pipe</label>
+      <label for="app-url">URL da Fluxolu</label>
       <input id="app-url" type="url" />
       <button id="save-url" class="secondary full">Salvar ambiente</button>
-      <p class="hint">A extensão não envia mensagens nem acessa seu token do WhatsApp. Ela só usa o contexto visível do chat para abrir a busca correspondente no Dash e Pipe.</p>
+      <p class="hint">A busca pode usar outro ambiente. A sincronização funciona apenas na Fluxolu oficial.</p>
+    </section>
+    <section class="card">
+      <h2>Sincronização automática</h2>
+      <p class="hint">Textos carregados da conversa individual aberta serão enviados ao seu workspace. Mantenha o WhatsApp Web e a página Extensão da Fluxolu abertos. Grupos, mídias e histórico completo não são capturados.</p>
+      <button id="open-bridge" class="secondary full">Abrir conexão na Fluxolu</button>
+      <button id="prepare-sync" class="secondary full">Conferir workspace</button>
+      <p id="sync-workspace"></p>
+      <button id="enable-sync" class="primary full" disabled>Ativar sincronização</button>
+      <button id="pause-sync" class="secondary full">Pausar e limpar fila local</button>
+      <p id="sync-status" role="status" aria-live="polite"></p>
+      <p class="hint">Ao trocar de conta do WhatsApp, pause e conecte novamente. A fila de reenvio dura apenas nesta sessão do navegador.</p>
     </section>
     <p id="status" class="status"></p>
   </main>
